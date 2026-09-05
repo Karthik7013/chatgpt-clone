@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   MessageSquareIcon,
   MoreHorizontalIcon,
+  PanelLeftCloseIcon,
   PencilIcon,
   PlusIcon,
   SparklesIcon,
@@ -45,7 +46,7 @@ export function ChatSidebar({
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, toggleSidebar } = useSidebar();
 
   function closeOnMobile() {
     if (isMobile) setOpenMobile(false);
@@ -71,6 +72,15 @@ export function ChatSidebar({
           <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
             Gemini Chat
           </span>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+            className="ml-auto rounded-md p-1.5 text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <PanelLeftCloseIcon className="size-4" />
+          </button>
         </div>
       </SidebarHeader>
 
