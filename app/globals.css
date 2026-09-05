@@ -188,6 +188,16 @@ body {
   animation: pulse-dot 1.1s ease-in-out infinite;
 }
 
+/* Ambient wash behind the new-chat empty state (theme-aware). */
+.empty-home {
+  background:
+    radial-gradient(
+      ellipse 60% 45% at 50% 28%,
+      color-mix(in oklch, var(--primary) 10%, transparent),
+      transparent 70%
+    );
+}
+
 @layer utilities {
   .sidebar-inset-wrapper {
     height: 100dvh;

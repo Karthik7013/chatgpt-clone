@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
-import { AlertTriangleIcon, Check, ChevronLeft, ChevronRight, Copy, RotateCcw, SparklesIcon } from "lucide-react";
+import { AlertTriangleIcon, Check, ChevronLeft, ChevronRight, Copy, RotateCcw } from "lucide-react";
 
 import {
   loadMessages,
@@ -15,9 +15,9 @@ import {
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
+import { EmptyHome } from "@/components/ai-elements/empty-home";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
@@ -32,13 +32,6 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { ModelSelector } from "@/components/ui/model-selector";
 import { DefaultChatTransport } from "ai";
-
-const SUGGESTIONS = [
-  "What's new in web development this week?",
-  "Explain how transformers work, step by step",
-  "Draft a polite email declining a meeting",
-  "Give me 5 ideas for a weekend side project",
-];
 
 export function ChatWindow({
   chatId,
@@ -190,24 +183,7 @@ export function ChatWindow({
       <Conversation scrollKey={lastUserMessageId ?? "empty"}>
         <ConversationContent>
           {messages.length === 0 ? (
-            <ConversationEmptyState
-              icon={<SparklesIcon className="size-8 text-primary" />}
-              title="What's on your mind?"
-              description="Ask anything. This demo streams text, reasoning summaries, and weather lookups from Gemini as they happen."
-            >
-              <div className="mt-4 grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-2">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setInput(s)}
-                    className="rounded-xl border border-border bg-surface px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </ConversationEmptyState>
+            <EmptyHome onSuggest={setInput} />
           ) : (
             messages.map((message, i) => {
               const prev = i > 0 ? messages[i - 1] : undefined;
