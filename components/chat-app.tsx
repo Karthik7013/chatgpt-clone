@@ -99,7 +99,7 @@ export function ChatApp() {
       />
 
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-10 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background/70 px-4 backdrop-blur-md">
           <SidebarTrigger />
           <span className="text-sm font-medium text-muted-foreground">
             {chats.find((c) => c.id === activeChatId)?.title ?? "New chat"}
