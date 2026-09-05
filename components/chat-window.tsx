@@ -4,7 +4,6 @@ import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, RotateCcw } from "lucide-react";
-import { toast } from "sonner";
 
 import {
   loadMessages,
@@ -108,33 +107,9 @@ export function ChatWindow({
     saveVersions(chatId, versionState);
   }, [chatId, versionState]);
 
-  React.useEffect(() => {
-    if (error) {
-      toast.error(error.message || "Something went wrong. Try again.", {
-        id: "chat-error",
-        icon: <CircleAlert className="size-4" />,
-        style: {
-          background: "var(--danger)",
-          color: "#fff",
-          border: "1px solid var(--danger)",
-        },
-        actionButtonStyle: {
-          background: "#fff",
-          color: "var(--danger)",
-        },
-        action: {
-          label: "Retry",
-          onClick: () => handleRetry(),
-        },
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [error]);
-
   function handleRetry() {
     const target = pendingRegenRef.current ?? lastUserMessageId;
     if (!target || isBusy) return;
-    toast.dismiss("chat-error");
     clearError();
     if (pendingRegenRef.current) {
       // A regeneration was in flight — retrigger it directly.
@@ -204,7 +179,6 @@ export function ChatWindow({
     const text = input.trim();
     if (!text || isBusy) return;
     clearError();
-    toast.dismiss("chat-error");
     sendMessage({ text });
     setInput("");
   }
@@ -256,6 +230,20 @@ export function ChatWindow({
             <Shimmer className="py-2 text-sm" duration={2}>
               Generating response…
             </Shimmer>
+          ) : null}
+          {error && !isBusy ? (
+            <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+              <CircleAlert className="size-3.5 shrink-0" />
+              <span className="flex-1">{error.message || "Something went wrong. Try again."}</span>
+              <button
+                type="button"
+                onClick={handleRetry}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-danger px-2.5 py-1.5 font-medium text-white transition-opacity hover:opacity-90"
+              >
+                <RotateCcw className="size-3.5" />
+                Retry
+              </button>
+            </div>
           ) : null}
         </ConversationContent>
         <ConversationScrollButton />
