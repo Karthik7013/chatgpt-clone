@@ -26,6 +26,7 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 export function ChatSidebar({
@@ -43,13 +44,29 @@ export function ChatSidebar({
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  function closeOnMobile() {
+    if (isMobile) setOpenMobile(false);
+  }
+
+  function handleNewChat() {
+    onNewChat();
+    closeOnMobile();
+  }
+
+  function handleSelect(id: string) {
+    onSelect(id);
+    closeOnMobile();
+  }
+
   return (
     <Sidebar>
       <SidebarHeader>
         <Button
           variant="outline"
           className="w-full justify-start gap-2"
-          onClick={onNewChat}
+          onClick={handleNewChat}
         >
           <PlusIcon className="size-4 shrink-0" />
           <span className="truncate">New chat</span>
@@ -68,7 +85,7 @@ export function ChatSidebar({
                 key={chat.id}
                 chat={chat}
                 active={chat.id === activeChatId}
-                onSelect={() => onSelect(chat.id)}
+                onSelect={() => handleSelect(chat.id)}
                 onRename={(title) => onRename(chat.id, title)}
                 onDelete={() => onDelete(chat.id)}
               />
