@@ -111,15 +111,39 @@ export function ChatWindow({
   React.useEffect(() => {
     if (error) {
       toast.error(error.message || "Something went wrong. Try again.", {
+        id: "chat-error",
         icon: <CircleAlert className="size-4" />,
         style: {
           background: "var(--danger)",
           color: "#fff",
           border: "1px solid var(--danger)",
         },
+        actionButtonStyle: {
+          background: "#fff",
+          color: "var(--danger)",
+        },
+        action: {
+          label: "Retry",
+          onClick: () => handleRetry(),
+        },
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
+
+  function handleRetry() {
+    const target = pendingRegenRef.current ?? lastUserMessageId;
+    if (!target || isBusy) return;
+    toast.dismiss("chat-error");
+    clearError();
+    if (pendingRegenRef.current) {
+      // A regeneration was in flight — retrigger it directly.
+      void regenerate();
+    } else {
+      // Re-send the last prompt; success is stored as a version.
+      handleRegenerate(target);
+    }
+  }
 
   // Fire the regeneration only after the truncation has committed to state,
   // so regenerate() reads the truncated history instead of the stale one.
@@ -180,6 +204,7 @@ export function ChatWindow({
     const text = input.trim();
     if (!text || isBusy) return;
     clearError();
+    toast.dismiss("chat-error");
     sendMessage({ text });
     setInput("");
   }
