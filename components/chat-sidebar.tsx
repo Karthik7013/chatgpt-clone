@@ -6,6 +6,7 @@ import {
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
+  SparklesIcon,
   Trash2Icon,
 } from "lucide-react";
 
@@ -63,17 +64,25 @@ export function ChatSidebar({
   return (
     <Sidebar>
       <SidebarHeader>
+        <div className="flex items-center gap-2 px-1 py-1">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+            <SparklesIcon className="size-4 text-primary" />
+          </span>
+          <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
+            Gemini Chat
+          </span>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
         <Button
           variant="outline"
-          className="w-full justify-start gap-2"
+          className="mb-1 w-full shrink-0 justify-start gap-2"
           onClick={handleNewChat}
         >
           <PlusIcon className="size-4 shrink-0" />
           <span className="truncate">New chat</span>
         </Button>
-      </SidebarHeader>
-
-      <SidebarContent>
         <SidebarMenu>
           {chats.length === 0 ? (
             <p className="px-2 py-4 text-xs text-muted-foreground">
