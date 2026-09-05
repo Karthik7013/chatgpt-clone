@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className="antialiased font-sans">
         {children}
         <Toaster
-          position="bottom-center"
+          position="top-center"
           toastOptions={{
             style: {
               background: "var(--popover)",

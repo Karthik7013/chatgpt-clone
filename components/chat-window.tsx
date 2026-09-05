@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
-import { Check, ChevronLeft, ChevronRight, Copy, RotateCcw } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -109,7 +109,16 @@ export function ChatWindow({
   }, [chatId, versionState]);
 
   React.useEffect(() => {
-    if (error) toast.error(error.message || "Something went wrong. Try again.");
+    if (error) {
+      toast.error(error.message || "Something went wrong. Try again.", {
+        icon: <CircleAlert className="size-4" />,
+        style: {
+          background: "var(--danger)",
+          color: "#fff",
+          border: "1px solid var(--danger)",
+        },
+      });
+    }
   }, [error]);
 
   // Fire the regeneration only after the truncation has committed to state,
