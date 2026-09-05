@@ -113,7 +113,10 @@ export function ChatSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <p className="text-xs text-muted-foreground">
+        <p
+          title="Next.js · shadcn/ui · AI Elements · Vercel AI SDK"
+          className="truncate text-xs text-muted-foreground"
+        >
           Next.js · shadcn/ui · AI Elements · Vercel AI SDK
         </p>
       </SidebarFooter>
