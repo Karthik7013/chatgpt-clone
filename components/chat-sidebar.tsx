@@ -76,11 +76,12 @@ export function ChatSidebar({
 
       <SidebarContent>
         <Button
-          variant="outline"
-          className="mb-1 w-full shrink-0 justify-start gap-2"
+          className="mb-1 w-full shrink-0 justify-start gap-2.5 rounded-xl bg-primary px-3 py-2.5 font-medium text-primary-foreground shadow-[0_2px_12px_-2px_var(--primary)] transition-all hover:opacity-90 hover:shadow-[0_4px_16px_-2px_var(--primary)] active:scale-[0.98]"
           onClick={handleNewChat}
         >
-          <PlusIcon className="size-4 shrink-0" />
+          <span className="flex size-6 items-center justify-center rounded-lg bg-white/20">
+            <PlusIcon className="size-4 shrink-0" />
+          </span>
           <span className="truncate">New chat</span>
         </Button>
         <SidebarMenu>
