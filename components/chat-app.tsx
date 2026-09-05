@@ -108,10 +108,6 @@ export function ChatApp() {
             <ThemeToggle />
           </div>
         </header>
-        <div
-          aria-hidden
-          className="pointer-events-none sticky top-14 z-10 h-8 shrink-0 bg-gradient-to-b from-background to-transparent"
-        />
 
         <div className="flex h-full flex-1 flex-col overflow-hidden">
           <ChatWindow

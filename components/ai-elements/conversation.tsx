@@ -75,6 +75,10 @@ export function Conversation({
           onScroll={handleScroll}
           className="h-full overflow-y-auto"
         >
+          <div
+            aria-hidden
+            className="pointer-events-none sticky top-0 z-10 -mb-8 h-8 shrink-0 bg-gradient-to-b from-background to-transparent"
+          />
           {children}
         </div>
       </div>
