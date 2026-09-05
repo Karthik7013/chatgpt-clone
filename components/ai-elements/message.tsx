@@ -41,7 +41,7 @@ export function MessageContent({
       className={cn(
         "text-[15px] leading-7",
         role === "user"
-          ? "max-w-[85%] rounded-2xl bg-surface-2 px-4 py-2.5 text-foreground"
+          ? "max-w-[85%] rounded-2xl bg-surface-2 px-4 py-2.5 font-medium text-foreground"
           : "w-full text-foreground",
         className,
       )}
