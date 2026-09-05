@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
-import { AlertTriangleIcon, Check, ChevronLeft, ChevronRight, Copy, RotateCcw } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   loadMessages,
@@ -106,6 +107,10 @@ export function ChatWindow({
   React.useEffect(() => {
     saveVersions(chatId, versionState);
   }, [chatId, versionState]);
+
+  React.useEffect(() => {
+    if (error) toast.error(error.message || "Something went wrong. Try again.");
+  }, [error]);
 
   // Fire the regeneration only after the truncation has committed to state,
   // so regenerate() reads the truncated history instead of the stale one.
@@ -223,12 +228,6 @@ export function ChatWindow({
       </Conversation>
 
       <div className="mx-auto w-full max-w-3xl px-4 pb-4">
-        {error ? (
-          <div className="mb-2 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-            <AlertTriangleIcon className="size-3.5 shrink-0" />
-            <span className="flex-1">{error.message || "Something went wrong. Try again."}</span>
-          </div>
-        ) : null}
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             value={input}
