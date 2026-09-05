@@ -7,6 +7,7 @@ import {
   createChat,
   deleteChat,
   listChats,
+  loadMessages,
   renameChat,
   titleFromMessage,
   touchChat,
@@ -45,6 +46,8 @@ export function ChatApp() {
   }
 
   function handleNewChat() {
+    // Already on a fresh empty chat — reuse it instead of piling up blanks.
+    if (activeChatId && loadMessages(activeChatId).length === 0) return;
     const chat = createChat();
     const chats = listChats();
     const seen = new Set<string>();
