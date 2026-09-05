@@ -99,7 +99,7 @@ export function ChatApp() {
       />
 
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background/70 px-4 backdrop-blur-md">
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background px-4">
           <SidebarTrigger />
           <span className="text-sm font-medium text-muted-foreground">
             {chats.find((c) => c.id === activeChatId)?.title ?? "New chat"}
@@ -108,6 +108,10 @@ export function ChatApp() {
             <ThemeToggle />
           </div>
         </header>
+        <div
+          aria-hidden
+          className="pointer-events-none sticky top-14 z-10 h-8 shrink-0 bg-gradient-to-b from-background to-transparent"
+        />
 
         <div className="flex h-full flex-1 flex-col overflow-hidden">
           <ChatWindow
