@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PanelLeftIcon } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -138,7 +138,7 @@ export function SidebarTrigger({ className, ...props }: React.ButtonHTMLAttribut
       aria-label="Toggle sidebar"
       {...props}
     >
-      <PanelLeftIcon className="size-4" />
+      <MenuIcon className="size-4" />
     </Button>
   );
 }
