@@ -172,7 +172,7 @@ function ChatListItem({
     <SidebarMenuItem>
       <SidebarMenuButton isActive={active} onClick={onSelect} title={chat.title}>
         <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="truncate">{chat.title}</span>
+        <span className="min-w-0 flex-1 truncate">{chat.title}</span>
       </SidebarMenuButton>
 
       <DropdownMenu>
