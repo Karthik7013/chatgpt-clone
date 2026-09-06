@@ -224,3 +224,10 @@ body {
     z-index: 10;
   }
 }
+
+/* No hover on touch screens: always show the chat row ⋯ button. */
+@media (hover: none) {
+  .chat-row-action {
+    opacity: 1;
+  }
+}

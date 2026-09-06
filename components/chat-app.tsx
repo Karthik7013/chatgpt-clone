@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { UIMessage } from "ai";
+import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 import {
   createChat,
@@ -17,6 +18,12 @@ import { ChatSidebar } from "@/components/chat-sidebar";
 import { ChatWindow } from "@/components/chat-window";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
@@ -26,6 +33,10 @@ export function ChatApp() {
   const [chats, setChats] = React.useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = React.useState<string | null>(null);
   const [ready, setReady] = React.useState(false);
+  const [renamingHeader, setRenamingHeader] = React.useState(false);
+  const [headerDraft, setHeaderDraft] = React.useState("");
+
+  const activeTitle = chats.find((c) => c.id === activeChatId)?.title ?? "New chat";
 
   React.useEffect(() => {
     const existing = listChats();
@@ -86,6 +97,17 @@ export function ChatApp() {
     refreshChats();
   }
 
+  function commitHeaderRename() {
+    setRenamingHeader(false);
+    const trimmed = headerDraft.trim();
+    if (activeChatId && trimmed) handleRename(activeChatId, trimmed);
+  }
+
+  function handleDeleteActive() {
+    if (!activeChatId) return;
+    if (window.confirm(`Delete "${activeTitle}"?`)) handleDelete(activeChatId);
+  }
+
   if (!ready || !activeChatId) {
     return <div className="h-dvh w-full bg-background" />;
   }
@@ -104,11 +126,50 @@ export function ChatApp() {
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background px-4">
           <SidebarTrigger />
-          <span className="text-sm font-medium text-muted-foreground">
-            {chats.find((c) => c.id === activeChatId)?.title ?? "New chat"}
-          </span>
-          <div className="ml-auto">
+          {renamingHeader ? (
+            <input
+              autoFocus
+              value={headerDraft}
+              onChange={(e) => setHeaderDraft(e.target.value)}
+              onBlur={commitHeaderRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitHeaderRename();
+                if (e.key === "Escape") setRenamingHeader(false);
+              }}
+              aria-label="Rename chat"
+              className="min-w-0 flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-foreground focus:outline-none"
+            />
+          ) : (
+            <span className="truncate text-sm font-medium text-muted-foreground">
+              {activeTitle}
+            </span>
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Chat options"
+                  className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+                >
+                  <MoreHorizontalIcon className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setHeaderDraft(activeTitle);
+                    setRenamingHeader(true);
+                  }}
+                >
+                  <PencilIcon className="size-3.5" /> Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem destructive onSelect={handleDeleteActive}>
+                  <Trash2Icon className="size-3.5" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

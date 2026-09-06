@@ -180,6 +180,7 @@ function ChatListItem({
           <SidebarMenuAction
             showOnHover
             aria-label="Chat options"
+            className="chat-row-action"
             onClick={(e) => e.stopPropagation()}
           >
             <MoreHorizontalIcon className="size-4" />
