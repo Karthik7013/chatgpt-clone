@@ -24,14 +24,26 @@ const ToolContext = React.createContext<{
 
 export function Tool({
   defaultOpen = false,
+  open: controlledOpen,
+  onOpenChange,
   className,
   children,
 }: {
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   className?: string;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = React.useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = React.useCallback(
+    (value: boolean) => {
+      if (controlledOpen === undefined) setInternalOpen(value);
+      onOpenChange?.(value);
+    },
+    [controlledOpen, onOpenChange],
+  );
   return (
     <ToolContext.Provider value={{ open, setOpen }}>
       <div

@@ -62,7 +62,7 @@ export const PromptInputTextarea = React.forwardRef<
         onKeyDown?.(e);
       }}
       className={cn(
-        "max-h-[200px] min-h-[24px] w-full resize-none bg-transparent px-2 py-1.5 text-[15px] leading-6 text-foreground placeholder:text-muted-foreground focus:outline-none",
+        "max-h-[200px] min-h-[24px] w-full resize-none bg-transparent px-2 py-1.5 text-[15px] font-medium leading-6 text-foreground placeholder:text-muted-foreground focus:outline-none",
         className,
       )}
       {...props}

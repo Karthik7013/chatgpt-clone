@@ -31,6 +31,8 @@ import {
   PromptInputToolbar,
 } from "@/components/ai-elements/prompt-input";
 import { ModelSelector } from "@/components/ui/model-selector";
+import { TimeCard } from "@/components/time-card";
+import { WeatherCard } from "@/components/weather-card";
 import { DefaultChatTransport } from "ai";
 
 export function ChatWindow({
@@ -375,8 +377,50 @@ function MessageBubble({
               };
               const typeLabel =
                 part.type === "dynamic-tool" ? `tool-${toolPart.toolName ?? "unknown"}` : part.type;
+              const toolName =
+                part.type === "dynamic-tool"
+                  ? (toolPart.toolName ?? "unknown")
+                  : typeLabel.replace(/^tool-/, "");
+              // Rich cards for known tools (generative UI); every other
+              // tool keeps the generic collapsible renderer below.
+              if (toolName === "weather") {
+                return (
+                  <WeatherCard
+                    key={index}
+                    type={typeLabel}
+                    state={toolPart.state}
+                    input={toolPart.input}
+                    output={toolPart.output}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
+              // MCP tools arrive namespaced as <server>__get-time.
+              if (toolName.endsWith("__get-time")) {
+                return (
+                  <TimeCard
+                    key={index}
+                    type={typeLabel}
+                    state={toolPart.state}
+                    input={toolPart.input}
+                    output={toolPart.output}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
+              // Force the card open while the tool is executing so the
+              // Preparing/Running loading state is visible. Falls back to
+              // uncontrolled (user toggle + auto-open on error) once done.
+              const isLive =
+                isStreamingTarget &&
+                (toolPart.state === "input-streaming" ||
+                  toolPart.state === "input-available");
               return (
-                <Tool key={index} defaultOpen={toolPart.state === "output-error"}>
+                <Tool
+                  key={index}
+                  defaultOpen={toolPart.state === "output-error"}
+                  open={isLive ? true : undefined}
+                >
                   <ToolHeader type={typeLabel} state={toolPart.state} />
                   <ToolContent>
                     <ToolInput input={toolPart.input} />
