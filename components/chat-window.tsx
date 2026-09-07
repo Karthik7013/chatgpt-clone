@@ -214,13 +214,13 @@ export function ChatWindow({
                   versionControls={
                     promptId
                       ? {
-                          index: Math.min(activeIdx, Math.max((list?.length ?? 1) - 1, 0)),
-                          total: list?.length ?? 1,
-                          disabled: isBusy,
-                          onPrev: () => showVersion(promptId, -1),
-                          onNext: () => showVersion(promptId, 1),
-                          onRegenerate: () => handleRegenerate(promptId),
-                        }
+                        index: Math.min(activeIdx, Math.max((list?.length ?? 1) - 1, 0)),
+                        total: list?.length ?? 1,
+                        disabled: isBusy,
+                        onPrev: () => showVersion(promptId, -1),
+                        onNext: () => showVersion(promptId, 1),
+                        onRegenerate: () => handleRegenerate(promptId),
+                      }
                       : undefined
                   }
                 />
@@ -251,7 +251,7 @@ export function ChatWindow({
         <ConversationScrollButton />
       </Conversation>
 
-      <div className="mx-auto w-full max-w-3xl px-4 pb-4">
+      <div className="mx-auto w-full max-w-3xl px-4 bg-background border-border shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             value={input}
@@ -264,6 +264,9 @@ export function ChatWindow({
             <PromptInputSubmit status={status} disabled={!input.trim()} onStop={stop} />
           </PromptInputToolbar>
         </PromptInput>
+        <p className="text-center text-xs text-muted-foreground my-1">
+          AI-generated. Check important info for accuracy.
+        </p>
       </div>
     </div>
   );

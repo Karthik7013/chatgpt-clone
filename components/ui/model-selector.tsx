@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Sparkles } from "lucide-react";
+import { Check, ChevronsUpDown, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +48,7 @@ export function ModelSelector({
           aria-label="Select model"
           className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
-          <Sparkles className="size-3" />
+          <Settings2 className="size-3" />
           <span className="max-w-36 truncate">{selected.name}</span>
           <ChevronsUpDown className="size-3 shrink-0 opacity-50" />
         </Button>
@@ -78,7 +78,7 @@ export function ModelSelector({
                     />
                     <span className="font-medium">{m.name}</span>
                   </span>
-                  <span className="pl-[22px] text-xs text-muted-foreground">
+                  <span className="pl-5.5 text-xs text-muted-foreground">
                     {m.description}
                   </span>
                 </CommandItem>

@@ -4,10 +4,17 @@ import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "./button";
 
+const THEME_KEY = "theme";
+
+function getInitialDark(): boolean {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === "dark") return true;
+  if (stored === "light") return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 export function ThemeToggle() {
-  const [isDark, setIsDark] = React.useState(() =>
-    document.documentElement.classList.contains("dark"),
-  );
+  const [isDark, setIsDark] = React.useState(getInitialDark);
 
   React.useEffect(() => {
     const root = document.documentElement;
@@ -16,6 +23,7 @@ export function ThemeToggle() {
     } else {
       root.classList.remove("dark");
     }
+    localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
   }, [isDark]);
 
   return (

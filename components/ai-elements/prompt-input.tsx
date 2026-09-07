@@ -20,7 +20,7 @@ export function PromptInput({
     <form
       onSubmit={onSubmit}
       className={cn(
-        "flex flex-col gap-2 rounded-2xl border border-border bg-surface p-2.5 shadow-lg",
+        "flex flex-col gap-2 rounded-3xl border border-border bg-surface p-2.5 px-1.5 shadow-lg",
         className,
       )}
     >

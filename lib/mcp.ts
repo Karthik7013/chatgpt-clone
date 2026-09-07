@@ -7,17 +7,16 @@ export type McpServerConfig = {
   type?: "http" | "sse";
 };
 
+const MCP_SERVERS: McpServerConfig[] = [
+  { name: "local", url: "http://localhost:3000/api/mcp" },
+  { name: "xdocs", url: "https://docs.x.com/mcp" },
+  { name: "context7", url: "https://mcp.context7.com/mcp" },
+];
+
 type McpClient = {
   close: () => Promise<void>;
   tools: (opts?: unknown) => Promise<Record<string, unknown>>;
 };
-
-export function isMcpEnabled(): boolean {
-  const flag = process.env.MCP_ENABLED;
-  if (flag !== undefined)
-    return flag.toLowerCase() !== "false" && flag !== "0" && flag !== "";
-  return Boolean(process.env.MCP_SERVERS?.trim());
-}
 
 function sanitizeName(name: string): string {
   return (
@@ -29,46 +28,14 @@ function sanitizeName(name: string): string {
   );
 }
 
-export function parseMcpConfig(raw?: string): McpServerConfig[] {
-  const out: McpServerConfig[] = [];
-  const push = (
-    name: string,
-    url: string,
-    apiKey?: string,
-    type?: "http" | "sse",
-  ) => {
-    if (!url || !/^https?:\/\//.test(url.trim())) return;
-    out.push({
-      name: sanitizeName(name),
-      url: url.trim(),
-      apiKey: apiKey?.trim() || undefined,
-      type,
-    });
-  };
-
-  const src = raw ?? process.env.MCP_SERVERS;
-  if (src?.trim()) {
-    try {
-      const parsed = JSON.parse(src) as McpServerConfig[];
-      if (Array.isArray(parsed)) {
-        for (const s of parsed) {
-          if (s && typeof s.url === "string") {
-            push(
-              String(s.name ?? "mcp"),
-              s.url,
-              s.apiKey,
-              s.type === "sse" ? "sse" : "http",
-            );
-          }
-        }
-      }
-    } catch (err) {
-      console.error("[mcp] Invalid MCP_SERVERS JSON, ignoring:", err);
-    }
-  }
-
-  // De-dupe by url
-  return [...new Map(out.map((s) => [s.url, s])).values()];
+export function parseMcpConfig(): McpServerConfig[] {
+  return MCP_SERVERS.map((s) => ({
+    ...s,
+    name: sanitizeName(s.name),
+    url: s.url.trim(),
+    apiKey: s.apiKey?.trim() || undefined,
+    type: s.type ?? "http",
+  }));
 }
 
 export async function loadMcpTools(): Promise<{
@@ -77,8 +44,6 @@ export async function loadMcpTools(): Promise<{
 }> {
   const tools: Record<string, unknown> = {};
   const clients: McpClient[] = [];
-
-  if (!isMcpEnabled()) return { tools, closeAll: async () => {} };
 
   const servers = parseMcpConfig();
 

@@ -167,23 +167,28 @@ body {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 999px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
 @keyframes pulse-dot {
+
   0%,
   100% {
     opacity: 0.3;
   }
+
   50% {
     opacity: 1;
   }
 }
+
 .thinking-dot {
   animation: pulse-dot 1.1s ease-in-out infinite;
 }
@@ -191,11 +196,9 @@ body {
 /* Ambient wash behind the new-chat empty state (theme-aware). */
 .empty-home {
   background:
-    radial-gradient(
-      ellipse 60% 45% at 50% 28%,
+    radial-gradient(ellipse 60% 45% at 50% 28%,
       color-mix(in oklch, var(--primary) 10%, transparent),
-      transparent 70%
-    );
+      transparent 70%);
 }
 
 @layer utilities {
@@ -203,6 +206,7 @@ body {
     height: 100dvh;
     overflow: hidden;
   }
+
   .sidebar-inset-wrapper main {
     height: 100%;
     overflow: hidden;
@@ -214,10 +218,12 @@ body {
     height: 100dvh;
     overflow: hidden;
   }
+
   .sidebar-inset-wrapper main {
     height: 100%;
     overflow: hidden;
   }
+
   .sidebar-inset-wrapper header {
     position: sticky;
     top: 0;
@@ -230,4 +236,11 @@ body {
   .chat-row-action {
     opacity: 1;
   }
+}
+
+pre {
+  overflow-x: auto;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  border-radius: inherit;
 }
