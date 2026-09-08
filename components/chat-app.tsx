@@ -37,6 +37,10 @@ export function ChatApp() {
   const [headerDraft, setHeaderDraft] = React.useState("");
 
   const activeTitle = chats.find((c) => c.id === activeChatId)?.title ?? "New chat";
+  const activeChatMessageCount = React.useMemo(
+    () => (activeChatId ? loadMessages(activeChatId).length : 0),
+    [activeChatId]
+  );
 
   React.useEffect(() => {
     const existing = listChats();
@@ -124,61 +128,69 @@ export function ChatApp() {
       />
 
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background px-4">
-          <SidebarTrigger />
-          {renamingHeader ? (
-            <input
-              autoFocus
-              value={headerDraft}
-              onChange={(e) => setHeaderDraft(e.target.value)}
-              onBlur={commitHeaderRename}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitHeaderRename();
-                if (e.key === "Escape") setRenamingHeader(false);
-              }}
-              aria-label="Rename chat"
-              className="min-w-0 flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-foreground focus:outline-none"
-            />
-          ) : (
-            <span className="truncate text-sm font-medium text-muted-foreground">
-              {activeTitle}
-            </span>
-          )}
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Chat options"
-                  className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-                >
-                  <MoreHorizontalIcon className="size-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setHeaderDraft(activeTitle);
-                    setRenamingHeader(true);
+        <div className="flex h-full flex-1 flex-row overflow-hidden">
+          {/* Chat Column */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background px-4">
+              <SidebarTrigger />
+              {renamingHeader ? (
+                <input
+                  autoFocus
+                  value={headerDraft}
+                  onChange={(e) => setHeaderDraft(e.target.value)}
+                  onBlur={commitHeaderRename}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitHeaderRename();
+                    if (e.key === "Escape") setRenamingHeader(false);
                   }}
-                >
-                  <PencilIcon className="size-3.5" /> Rename
-                </DropdownMenuItem>
-                <DropdownMenuItem destructive onSelect={handleDeleteActive}>
-                  <Trash2Icon className="size-3.5" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+                  aria-label="Rename chat"
+                  className="min-w-0 flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-foreground focus:outline-none"
+                />
+              ) : (
+                <span className="truncate text-sm font-medium text-muted-foreground">
+                  {activeTitle}
+                </span>
+              )}
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                <ThemeToggle />
+                {activeChatMessageCount > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Chat options"
+                        className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+                      >
+                        <MoreHorizontalIcon className="size-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          setHeaderDraft(activeTitle);
+                          setRenamingHeader(true);
+                        }}
+                      >
+                        <PencilIcon className="size-3.5" /> Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem destructive onSelect={handleDeleteActive}>
+                        <Trash2Icon className="size-3.5" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </header>
 
-        <div className="flex h-full flex-1 flex-col overflow-hidden">
-          <ChatWindow
-            key={activeChatId}
-            chatId={activeChatId}
-            onFirstMessage={(message) => handleFirstMessage(activeChatId, message)}
-          />
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <ChatWindow
+                key={activeChatId}
+                chatId={activeChatId}
+                onFirstMessage={(message) => handleFirstMessage(activeChatId, message)}
+              />
+            </div>
+          </div>
+          {/* artifact-colum */}
         </div>
       </SidebarInset>
     </SidebarProvider>

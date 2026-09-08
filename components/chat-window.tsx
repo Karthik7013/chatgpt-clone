@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
-import type { UIMessage } from "ai";
+import type { UIMessage, FileUIPart } from "ai";
+import { nanoid } from "nanoid";
 import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, RotateCcw } from "lucide-react";
 
 import {
@@ -12,6 +13,7 @@ import {
   saveVersions,
   type VersionState,
 } from "@/lib/chat-store";
+import { uploadFileToWorker, type UploadResult } from "@/lib/file-upload";
 import {
   Conversation,
   ConversationContent,
@@ -29,7 +31,17 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputToolbar,
+  PromptInputAttachButton,
+  PromptInputAttachmentsDisplay,
+  usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
+import {
+  Attachments,
+  Attachment,
+  AttachmentPreview,
+  AttachmentInfo,
+  type AttachmentData,
+} from "@/components/ai-elements/attachments";
 import { ModelSelector } from "@/components/ui/model-selector";
 import { TimeCard } from "@/components/time-card";
 import { WeatherCard } from "@/components/weather-card";
@@ -45,6 +57,8 @@ export function ChatWindow({
   const [input, setInput] = React.useState("");
   const [model, setModel] = React.useState("gemini-2.5-flash");
   const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
+  const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
+  const [uploading, setUploading] = React.useState(false);
   const hasNotifiedFirstMessage = React.useRef(initialMessages.length > 0);
   const [versionState, setVersionState] = React.useState<VersionState>(() => loadVersions(chatId));
   // User message id currently awaiting a regenerated response.
@@ -179,10 +193,50 @@ export function ChatWindow({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const text = input.trim();
-    if (!text || isBusy) return;
+    if ((!text && pendingFiles.length === 0) || isBusy) return;
     clearError();
-    sendMessage({ text });
+    sendMessage({
+      text: text || (pendingFiles.length > 0 ? "Sent with attachments" : ""),
+      files: pendingFiles.length > 0 ? pendingFiles : undefined,
+    });
     setInput("");
+    setPendingFiles([]);
+  }
+
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = e.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadPromises = Array.from(selectedFiles).map(async (file) => {
+        const result: UploadResult = await uploadFileToWorker(file);
+        return {
+          type: "file" as const,
+          id: result.itemId,
+          filename: result.fileName,
+          mediaType: file.type || "application/octet-stream",
+          url: result.downloadUrl,
+        };
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setPendingFiles((prev) => [...prev, ...uploadedFiles]);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      // You could add a toast notification here
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  function handleRemovePendingFile(id: string) {
+    setPendingFiles((prev) => prev.filter((f) => f.id !== id));
   }
 
   const lastMessageId = messages.at(-1)?.id;
@@ -252,7 +306,20 @@ export function ChatWindow({
       </Conversation>
 
       <div className="mx-auto w-full max-w-3xl px-4 bg-background border-border shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.txt,.docx,.csv,.tsx,.ts,.js,.jsx,.json,.md,.xml,.html,.css,.py,.java,.c,.cpp,.rb,.go,.rs,.sql,.yaml,.yml,.toml,.ini,.cfg,.log,.rtf,.odt,.ods,.epub,text/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
         <PromptInput onSubmit={handleSubmit}>
+          <PromptInputAttachmentsDisplay
+            files={pendingFiles}
+            onRemove={handleRemovePendingFile}
+            uploading={uploading}
+          />
           <PromptInputTextarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -260,8 +327,14 @@ export function ChatWindow({
             disabled={isBusy}
           />
           <PromptInputToolbar>
-            <ModelSelector model={model} onModelChange={setModel} />
-            <PromptInputSubmit status={status} disabled={!input.trim()} onStop={stop} />
+            <div className="flex items-center gap-1">
+              <PromptInputAttachButton
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isBusy || uploading}
+              />
+              <ModelSelector model={model} onModelChange={setModel} />
+            </div>
+            <PromptInputSubmit status={status} disabled={uploading || (!input.trim() && pendingFiles.length === 0)} onStop={stop} />
           </PromptInputToolbar>
         </PromptInput>
         <p className="text-center text-xs text-muted-foreground my-1">
@@ -356,6 +429,26 @@ function MessageBubble({
                 </p>
               ) : (
                 <Response key={index}>{part.text}</Response>
+              );
+            }
+
+            if (part.type === "file") {
+              const filePart = part as FileUIPart;
+              const attachmentData: AttachmentData = {
+                ...filePart,
+                id: `file-${message.id}-${index}`,
+              };
+              return (
+                <Attachments key={index} variant="inline">
+                  <Attachment
+                    data={attachmentData}
+                    onClick={() => filePart.url && window.open(filePart.url, "_blank")}
+                    className="cursor-pointer"
+                  >
+                    <AttachmentPreview />
+                    <AttachmentInfo />
+                  </Attachment>
+                </Attachments>
               );
             }
 

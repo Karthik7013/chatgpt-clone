@@ -1,6 +1,7 @@
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
 import { loadMcpTools } from "@/lib/mcp";
+import { isTextReadable, fetchTextContent } from "@/lib/file-reader";
 import {
   asSchema,
   convertToModelMessages,
@@ -86,11 +87,39 @@ export async function POST(req: Request) {
   const { messages, model }: { messages: UIMessage[]; model?: string } = body;
   const selectedModel = model ?? "gemini-2.5-flash";
 
+  // Extract file attachments from the last user message
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+  const fileAttachments = lastUserMessage?.parts
+    ?.filter((p): p is Extract<UIMessage["parts"][number], { type: "file" }> => p.type === "file")
+    .map((p) => ({
+      filename: p.filename,
+      url: p.url,
+      mediaType: p.mediaType,
+    })) ?? [];
+
+  // Fetch content from text-readable files
+  const fileContents: string[] = [];
+  for (const file of fileAttachments) {
+    if (file.filename && file.url && isTextReadable(file.filename)) {
+      try {
+        const content = await fetchTextContent(file.url);
+        fileContents.push(`--- File: ${file.filename} ---\n${content}\n--- End of file ---`);
+      } catch (err) {
+        console.error(`Failed to read file ${file.filename}:`, err);
+        fileContents.push(`--- File: ${file.filename} ---\n[Failed to read file content]\n--- End of file ---`);
+      }
+    }
+  }
+
+  const systemPrompt = fileContents.length > 0
+    ? `${SYSTEM_PROMPT}\n\nThe user has uploaded the following files. Use the file contents to answer their question:\n\n${fileContents.join("\n\n")}`
+    : SYSTEM_PROMPT;
+
   const { tools: mcpTools, closeAll } = await loadMcpTools();
 
   const result = streamText({
     model: google(selectedModel as string),
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     messages: await convertToModelMessages(messages),
     tools: {
       weather: weatherTool,

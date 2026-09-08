@@ -1,11 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { ArrowUpIcon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, PlusIcon, SquareIcon } from "lucide-react";
+import type { FileUIPart } from "ai";
+import { nanoid } from "nanoid";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ai-elements/loader";
+import {
+  Attachments,
+  Attachment,
+  AttachmentPreview,
+  AttachmentInfo,
+  AttachmentRemove,
+  type AttachmentData,
+} from "@/components/ai-elements/attachments";
 
 export function PromptInput({
   onSubmit,
@@ -122,5 +132,134 @@ export function PromptInputSubmit({
     >
       <ArrowUpIcon className="size-4" />
     </Button>
+  );
+}
+
+// ============================================================================
+// File Upload
+// ============================================================================
+
+export interface UsePromptInputAttachmentsOptions {
+  maxFiles?: number;
+  maxFileSize?: number;
+  accept?: string;
+  onFilesChange?: (files: (FileUIPart & { id: string })[]) => void;
+}
+
+export function usePromptInputAttachments(options: UsePromptInputAttachmentsOptions = {}) {
+  const { maxFiles = 10, maxFileSize = 50 * 1024 * 1024, accept, onFilesChange } = options;
+  const [files, setFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
+  const [uploading, setUploading] = React.useState<boolean>(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const add = React.useCallback(
+    (newFiles: (FileUIPart & { id: string })[]) => {
+      setFiles((prev) => {
+        const next = [...prev, ...newFiles].slice(0, maxFiles);
+        onFilesChange?.(next);
+        return next;
+      });
+    },
+    [maxFiles, onFilesChange]
+  );
+
+  const remove = React.useCallback(
+    (id: string) => {
+      setFiles((prev) => {
+        const next = prev.filter((f) => f.id !== id);
+        onFilesChange?.(next);
+        return next;
+      });
+    },
+    [onFilesChange]
+  );
+
+  const clear = React.useCallback(() => {
+    setFiles([]);
+    onFilesChange?.([]);
+  }, [onFilesChange]);
+
+  const openFileDialog = React.useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  return {
+    files,
+    uploading,
+    setUploading,
+    add,
+    remove,
+    clear,
+    openFileDialog,
+    fileInputRef,
+    maxFiles,
+    maxFileSize,
+    accept,
+  };
+}
+
+export interface PromptInputAttachButtonProps {
+  onClick?: () => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+export function PromptInputAttachButton({
+  onClick,
+  disabled,
+  className,
+}: PromptInputAttachButtonProps) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn("size-8 rounded-full", className)}
+      aria-label="Attach files"
+    >
+      <PlusIcon className="size-4" />
+    </Button>
+  );
+}
+
+export interface PromptInputAttachmentsDisplayProps {
+  files: (FileUIPart & { id: string })[];
+  onRemove?: (id: string) => void;
+  uploading?: boolean;
+  className?: string;
+}
+
+export function PromptInputAttachmentsDisplay({
+  files,
+  onRemove,
+  uploading,
+  className,
+}: PromptInputAttachmentsDisplayProps) {
+  if (files.length === 0 && !uploading) return null;
+
+  return (
+    <Attachments variant="inline" className={className}>
+      {files.map((file) => (
+        <Attachment
+          key={file.id}
+          data={file}
+          onRemove={onRemove ? () => onRemove(file.id) : undefined}
+          onClick={() => file.url && window.open(file.url, "_blank")}
+          className="cursor-pointer"
+        >
+          <AttachmentPreview />
+          <AttachmentInfo />
+          <AttachmentRemove />
+        </Attachment>
+      ))}
+      {uploading && (
+        <div className="flex h-8 items-center gap-1.5 rounded-md border border-border px-1.5 text-sm text-muted-foreground">
+          <Loader size={12} className="text-muted-foreground" />
+          <span>Uploading…</span>
+        </div>
+      )}
+    </Attachments>
   );
 }
