@@ -218,7 +218,7 @@ export function ChatWindow({
           id: result.itemId,
           filename: result.fileName,
           mediaType: file.type || "application/octet-stream",
-          url: result.downloadUrl,
+          url: result.instantDownloadUrl,
         };
       });
 

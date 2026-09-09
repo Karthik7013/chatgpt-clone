@@ -26,7 +26,9 @@ function getMediaType(file: File): string {
 export interface UploadResult {
   itemId: string;
   fileName: string;
-  downloadUrl: string;
+  instantDownloadUrl: string;
+  publicDownloadUrl: string;
+  detailsUrl: string;
 }
 
 export function validateFile(file: File): string | null {
