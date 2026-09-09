@@ -120,7 +120,12 @@ export async function POST(req: Request) {
   const result = streamText({
     model: google(selectedModel as string),
     system: systemPrompt,
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(
+      messages.map((message) => ({
+        ...message,
+        parts: message.parts.filter((part) => !(part.type === "file")),
+      }))
+    ),
     tools: {
       weather: weatherTool,
       ...mcpTools,
