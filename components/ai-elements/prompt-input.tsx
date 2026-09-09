@@ -242,7 +242,7 @@ export function PromptInputAttachmentsDisplay({
   return (
     <Attachments variant="grid" className={cn("justify-start !ml-0 !w-full", className)}>
       {files.map((file) => (
-        <div key={file.id} className="flex w-24 flex-col items-start">
+        <div key={file.id} className="flex w-16 flex-col items-start">
           <Attachment
             data={file}
             onRemove={onRemove ? () => onRemove(file.id) : undefined}
@@ -258,9 +258,9 @@ export function PromptInputAttachmentsDisplay({
         </div>
       ))}
       {uploading && (
-        <div className="flex w-24 flex-col items-start">
-          <div className="flex size-24 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
-            <Loader size={24} className="text-muted-foreground" />
+        <div className="flex w-16 flex-col items-start">
+          <div className="flex size-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
+            <Loader size={20} className="text-muted-foreground" />
           </div>
           <span className="w-full truncate pt-1 text-left text-xs text-muted-foreground">
             Uploading…
