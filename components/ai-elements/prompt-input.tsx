@@ -240,7 +240,7 @@ export function PromptInputAttachmentsDisplay({
   if (files.length === 0 && !uploading) return null;
 
   return (
-    <Attachments variant="grid" className={className}>
+    <Attachments variant="grid" className={cn("justify-start", className)}>
       {files.map((file) => (
         <div key={file.id} className="flex flex-col items-center">
           <Attachment
@@ -258,9 +258,13 @@ export function PromptInputAttachmentsDisplay({
         </div>
       ))}
       {uploading && (
-        <div className="flex h-8 items-center gap-1.5 rounded-md border border-border px-1.5 text-sm text-muted-foreground">
-          <Loader size={12} className="text-muted-foreground" />
-          <span>Uploading…</span>
+        <div className="flex flex-col items-start">
+          <div className="flex size-24 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
+            <Loader size={24} className="text-muted-foreground" />
+          </div>
+          <span className="w-24 truncate pt-1 text-center text-xs text-muted-foreground">
+            Uploading…
+          </span>
         </div>
       )}
     </Attachments>
