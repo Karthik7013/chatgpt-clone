@@ -133,6 +133,10 @@ export async function POST(req: Request) {
     stopWhen: stepCountIs(5),
     onError: ({ error }) => {
       console.error("streamText error:", error);
+      const msg = String(error);
+      if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
+        console.error("Rate limit hit for model:", selectedModel);
+      }
       void closeAll();
     },
     onFinish: async () => {

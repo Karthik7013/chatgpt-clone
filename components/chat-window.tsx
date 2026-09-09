@@ -61,8 +61,28 @@ export function ChatWindow({
   const [uploading, setUploading] = React.useState(false);
   const hasNotifiedFirstMessage = React.useRef(initialMessages.length > 0);
   const [versionState, setVersionState] = React.useState<VersionState>(() => loadVersions(chatId));
-  // User message id currently awaiting a regenerated response.
+   // User message id currently awaiting a regenerated response.
   const pendingRegenRef = React.useRef<string | null>(null);
+
+  function getErrorMessage(err: unknown): string {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
+      return "Rate limit exceeded. Try a different model or wait a moment.";
+    }
+    if (msg.includes("PERMISSION_DENIED") || msg.includes("403")) {
+      return "API key error. Check your Google AI API key.";
+    }
+    if (msg.includes("INVALID_ARGUMENT") || msg.includes("400")) {
+      return "Invalid request. The prompt or file may be too large.";
+    }
+    if (msg.includes("UNAVAILABLE") || msg.includes("503")) {
+      return "Service temporarily unavailable. Try again later.";
+    }
+    if (msg.includes("deadline_exceeded") || msg.includes("504")) {
+      return "Request timed out. Try a shorter prompt or smaller file.";
+    }
+    return msg || "Something went wrong. Try again.";
+  }
 
   const handleFinish = React.useCallback(
     ({ message, messages: finishedMessages }: { message: UIMessage; messages: UIMessage[] }) => {
@@ -290,7 +310,7 @@ export function ChatWindow({
           {error && !isBusy ? (
             <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
               <CircleAlert className="size-3.5 shrink-0" />
-              <span className="flex-1">{error.message || "Something went wrong. Try again."}</span>
+              <span className="flex-1">{getErrorMessage(error)}</span>
               <button
                 type="button"
                 onClick={handleRetry}
