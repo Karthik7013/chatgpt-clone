@@ -344,10 +344,10 @@ export const AttachmentRemove = ({
       aria-label={label}
       className={cn(
         variant === "grid" && [
-          "absolute top-2 right-2 size-6 rounded-full p-0",
+          "absolute top-1.5 right-1.5 size-5 rounded-full p-0",
           "bg-background/80 backdrop-blur-sm",
           "hover:bg-background",
-          "[&>svg]:size-3",
+          "[&>svg]:size-2.5",
         ],
         variant === "inline" && [
           "size-5 rounded p-0",
