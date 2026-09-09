@@ -240,7 +240,7 @@ export function PromptInputAttachmentsDisplay({
   if (files.length === 0 && !uploading) return null;
 
   return (
-    <Attachments variant="grid" className={cn("justify-start", className)}>
+    <Attachments variant="grid" className={cn("justify-start !ml-0 !w-full", className)}>
       {files.map((file) => (
         <div key={file.id} className="flex w-24 flex-col items-start">
           <Attachment
