@@ -252,7 +252,9 @@ export function PromptInputAttachmentsDisplay({
             <AttachmentPreview />
             <AttachmentRemove />
           </Attachment>
-          <AttachmentInfo />
+          <span className="w-full truncate pt-1 text-center text-xs text-muted-foreground">
+            {file.filename || "File"}
+          </span>
         </div>
       ))}
       {uploading && (
