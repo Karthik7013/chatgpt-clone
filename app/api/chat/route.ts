@@ -85,7 +85,7 @@ const weatherTool = tool({
 export async function POST(req: Request) {
   const body = await req.json();
   const { messages, model }: { messages: UIMessage[]; model?: string } = body;
-  const selectedModel = model ?? "gemini-2.5-flash";
+  const selectedModel = model ?? "gemini-3.5-flash";
 
   // Extract file attachments from the last user message
   const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");

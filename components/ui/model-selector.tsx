@@ -19,12 +19,10 @@ import {
 } from "@/components/ui/popover";
 
 const MODELS = [
-  { id: "gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite", description: "Fast & efficient" },
-  { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", description: "Balanced speed & quality" },
+  { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", description: "Best quality (free)" },
   { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash Lite", description: "Lightweight & fast" },
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", description: "Quick responses" },
-  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", description: "Budget-friendly" },
-  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", description: "Multimodal capable" },
+  { id: "gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite", description: "Fast & efficient" },
+  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", description: "High volume (1000/day)" },
 ];
 
 export function ModelSelector({
