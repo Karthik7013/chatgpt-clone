@@ -292,7 +292,11 @@ export const AttachmentInfo = ({
   const label = getAttachmentLabel(data);
 
   if (variant === "grid") {
-    return null;
+    return (
+      <div className={cn("w-full truncate text-center text-xs text-muted-foreground pt-1", className)} {...props}>
+        <span className="block truncate">{label}</span>
+      </div>
+    );
   }
 
   return (
@@ -342,7 +346,6 @@ export const AttachmentRemove = ({
         variant === "grid" && [
           "absolute top-2 right-2 size-6 rounded-full p-0",
           "bg-background/80 backdrop-blur-sm",
-          "opacity-0 transition-opacity group-hover:opacity-100",
           "hover:bg-background",
           "[&>svg]:size-3",
         ],

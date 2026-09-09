@@ -240,19 +240,20 @@ export function PromptInputAttachmentsDisplay({
   if (files.length === 0 && !uploading) return null;
 
   return (
-    <Attachments variant="inline" className={className}>
+    <Attachments variant="grid" className={className}>
       {files.map((file) => (
-        <Attachment
-          key={file.id}
-          data={file}
-          onRemove={onRemove ? () => onRemove(file.id) : undefined}
-          onClick={() => file.url && window.open(file.url, "_blank")}
-          className="cursor-pointer"
-        >
-          <AttachmentPreview />
+        <div key={file.id} className="flex flex-col items-center">
+          <Attachment
+            data={file}
+            onRemove={onRemove ? () => onRemove(file.id) : undefined}
+            onClick={() => file.url && window.open(file.url, "_blank")}
+            className="cursor-pointer"
+          >
+            <AttachmentPreview />
+            <AttachmentRemove />
+          </Attachment>
           <AttachmentInfo />
-          <AttachmentRemove />
-        </Attachment>
+        </div>
       ))}
       {uploading && (
         <div className="flex h-8 items-center gap-1.5 rounded-md border border-border px-1.5 text-sm text-muted-foreground">
