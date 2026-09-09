@@ -16,9 +16,12 @@ import {
 // Allow long-running streaming responses (tool calls + reasoning can take a while).
 export const maxDuration = 60;
 
+const WORKER_URL = "https://ia-upload.karthiktumala143.workers.dev/";
+
 const SYSTEM_PROMPT = `You are a helpful, direct assistant in a Gemini-powered demo app.
 Format answers in GitHub-flavored markdown when it helps readability (lists, tables, code fences with a language tag).
-You have a weather lookup tool — use it whenever the user asks about the weather or current conditions in any city, and cite the weather data in your answer.`;
+You have a weather lookup tool — use it whenever the user asks about the weather or current conditions in any city, and cite the weather data in your answer.
+You have a file generation tool — use it when the user asks you to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.`;
 
 /** Maps Open-Meteo WMO weather codes to a short display condition. */
 function wmoToCondition(code: number): string {
@@ -82,6 +85,45 @@ const weatherTool = tool({
   },
 });
 
+const generateFileTool = tool({
+  description: "Generate a file with content and upload it to Internet Archive. Use when the user asks to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.",
+  inputSchema: asSchema(z.object({
+    filename: z.string().describe("Filename with extension (e.g. 'sort.py', 'config.json', 'README.md')"),
+    content: z.string().describe("The complete file content to write"),
+    description: z.string().optional().describe("Brief one-line description of what the file does"),
+  })),
+  async execute({ filename, content, description }) {
+    try {
+      const blob = new Blob([content], { type: "text/plain" });
+      const file = new File([blob], filename, { type: "text/plain" });
+      
+      const response = await fetch(WORKER_URL, {
+        method: "PUT",
+        headers: {
+          "X-File-Name": filename,
+          "X-Media-Type": "texts",
+          "Content-Type": "text/plain",
+        },
+        body: file,
+      });
+      
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Upload failed");
+      
+      return {
+        filename: data.fileName,
+        description: description || `Generated ${filename}`,
+        downloadUrl: data.instantTmpUrl || data.instantDownloadUrl,
+        publicUrl: data.publicDownloadUrl,
+        detailsUrl: data.detailsUrl,
+        size: content.length,
+      };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "File generation failed");
+    }
+  },
+});
+
 export async function POST(req: Request) {
   const body = await req.json();
   const { messages, model }: { messages: UIMessage[]; model?: string } = body;
@@ -128,6 +170,7 @@ export async function POST(req: Request) {
     ),
     tools: {
       weather: weatherTool,
+      "generate-file": generateFileTool,
       ...mcpTools,
     },
     stopWhen: stepCountIs(5),

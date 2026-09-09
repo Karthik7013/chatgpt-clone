@@ -45,6 +45,7 @@ import {
 import { ModelSelector } from "@/components/ui/model-selector";
 import { TimeCard } from "@/components/time-card";
 import { WeatherCard } from "@/components/weather-card";
+import { FileCard } from "@/components/file-card";
 import { DefaultChatTransport } from "ai";
 
 export function ChatWindow({
@@ -524,6 +525,17 @@ function MessageBubble({
                     state={toolPart.state}
                     input={toolPart.input}
                     output={toolPart.output}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
+              if (toolName === "generate-file") {
+                return (
+                  <FileCard
+                    key={index}
+                    state={toolPart.state}
+                    input={toolPart.input as { filename: string; content: string; description?: string } | undefined}
+                    output={toolPart.output as { filename: string; description: string; downloadUrl: string; publicUrl: string; detailsUrl: string; size: number } | undefined}
                     errorText={toolPart.errorText}
                   />
                 );
