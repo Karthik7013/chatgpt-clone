@@ -1,4 +1,6 @@
 const MAX_CONTENT_BYTES = 50 * 1024; // 50 KB
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
 
 const TEXT_EXTENSIONS = new Set([
   ".txt", ".csv", ".json", ".md", ".ts", ".tsx", ".js", ".jsx",
@@ -14,9 +16,29 @@ export function isTextReadable(filename: string): boolean {
   return TEXT_EXTENSIONS.has(ext);
 }
 
+async function fetchWithRetry(url: string, retries = MAX_RETRIES): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return res;
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        continue;
+      }
+      throw new Error(`Failed to fetch file: ${res.status} ${res.statusText}`);
+    } catch (err) {
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("Failed to fetch file after retries");
+}
+
 export async function fetchTextContent(url: string): Promise<string> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch file: ${res.status} ${res.statusText}`);
+  const res = await fetchWithRetry(url);
 
   const buffer = await res.arrayBuffer();
   const bytes = new Uint8Array(buffer);

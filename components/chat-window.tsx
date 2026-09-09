@@ -439,15 +439,19 @@ function MessageBubble({
                 id: `file-${message.id}-${index}`,
               };
               return (
-                <Attachments key={index} variant="inline">
-                  <Attachment
-                    data={attachmentData}
-                    onClick={() => filePart.url && window.open(filePart.url, "_blank")}
-                    className="cursor-pointer"
-                  >
-                    <AttachmentPreview />
-                    <AttachmentInfo />
-                  </Attachment>
+                <Attachments key={index} variant="grid" className="justify-start !ml-0">
+                  <div className="flex w-16 flex-col items-start">
+                    <Attachment
+                      data={attachmentData}
+                      onClick={() => filePart.url && window.open(filePart.url, "_blank")}
+                      className="cursor-pointer"
+                    >
+                      <AttachmentPreview />
+                    </Attachment>
+                    <span className="w-full truncate pt-1 text-left text-xs text-muted-foreground">
+                      {filePart.filename || "File"}
+                    </span>
+                  </div>
                 </Attachments>
               );
             }
