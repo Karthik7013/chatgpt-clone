@@ -26,6 +26,7 @@ function getMediaType(file: File): string {
 export interface UploadResult {
   itemId: string;
   fileName: string;
+  instantTmpUrl: string | null;
   instantDownloadUrl: string;
   publicDownloadUrl: string;
   detailsUrl: string;
