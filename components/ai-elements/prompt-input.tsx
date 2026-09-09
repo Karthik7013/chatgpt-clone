@@ -258,13 +258,8 @@ export function PromptInputAttachmentsDisplay({
         </div>
       ))}
       {uploading && (
-        <div className="flex w-16 flex-col items-start">
-          <div className="flex size-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
-            <Loader size={20} className="text-muted-foreground" />
-          </div>
-          <span className="w-full truncate pt-1 text-left text-xs text-muted-foreground">
-            Uploading…
-          </span>
+        <div className="flex size-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
+          <Loader size={20} className="text-muted-foreground" />
         </div>
       )}
     </Attachments>
