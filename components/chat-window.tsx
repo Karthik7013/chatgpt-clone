@@ -59,7 +59,7 @@ export function ChatWindow({
   onFirstMessage: (message: UIMessage) => void;
 }) {
   const [input, setInput] = React.useState("");
-  const [model, setModel] = React.useState("openrouter:openai/gpt-oss-20b:free");
+  const [model, setModel] = React.useState("openrouter:nvidia/nemotron-3.5-lightning:free");
   const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
   const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
   const [uploading, setUploading] = React.useState(false);

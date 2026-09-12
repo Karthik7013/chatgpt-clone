@@ -233,7 +233,7 @@ const generateFileTool = tool({
 export async function POST(req: Request) {
   const body = await req.json();
   const { messages, model }: { messages: UIMessage[]; model?: string } = body;
-  const selectedModel = model ?? "openrouter:openai/gpt-oss-20b:free";
+  const selectedModel = model ?? "openrouter:nvidia/nemotron-3.5-lightning:free";
 
   // Extract file attachments from the last user message
   const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
