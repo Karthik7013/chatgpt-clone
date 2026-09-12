@@ -16,10 +16,13 @@ export function QrCard({ state, input, output, errorText }: QrCardProps) {
 
   function handleCopy() {
     if (!output) return;
-    navigator.clipboard.writeText(output.qrCodeUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(output.qrCodeUrl).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => {},
+    );
   }
 
   return (

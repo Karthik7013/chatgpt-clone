@@ -58,6 +58,7 @@ export async function loadMcpTools(): Promise<{
               ? { headers: { Authorization: `Bearer ${server.apiKey}` } }
               : {}),
           },
+          initializationOptions: { timeout: 10000 },
         })) as unknown as McpClient;
         clients.push(client);
         const serverTools = await client.tools();

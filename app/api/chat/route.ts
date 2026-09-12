@@ -231,79 +231,117 @@ const generateFileTool = tool({
 });
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { messages, model }: { messages: UIMessage[]; model?: string } = body;
-  const selectedModel = model ?? "openrouter:nvidia/nemotron-3.5-lightning:free";
+  let closeAll: (() => Promise<void>) | undefined;
 
-  // Extract file attachments from the last user message
-  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
-  const fileAttachments = lastUserMessage?.parts
-    ?.filter((p): p is Extract<UIMessage["parts"][number], { type: "file" }> => p.type === "file")
-    .map((p) => ({
-      filename: p.filename,
-      url: p.url,
-      mediaType: p.mediaType,
-    })) ?? [];
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
 
-  // Fetch content from text-readable files
-  const fileContents: string[] = [];
-  for (const file of fileAttachments) {
-    if (file.filename && file.url && isTextReadable(file.filename)) {
-      try {
-        const content = await fetchTextContent(file.url);
-        fileContents.push(`--- File: ${file.filename} ---\n${content}\n--- End of file ---`);
-      } catch (err) {
-        console.error(`Failed to read file ${file.filename}:`, err);
-        fileContents.push(`--- File: ${file.filename} ---\n[Failed to read file content]\n--- End of file ---`);
+    const { messages, model } = body as { messages?: UIMessage[]; model?: string };
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return Response.json({ error: "messages array required" }, { status: 400 });
+    }
+
+    const selectedModel = model ?? "openrouter:nvidia/nemotron-3.5-lightning:free";
+
+    // Extract file attachments from the last user message
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    const fileAttachments = lastUserMessage?.parts
+      ?.filter((p): p is Extract<UIMessage["parts"][number], { type: "file" }> => p.type === "file")
+      .map((p) => ({
+        filename: p.filename,
+        url: p.url,
+        mediaType: p.mediaType,
+      })) ?? [];
+
+    // Fetch content from text-readable files
+    const fileContents: string[] = [];
+    for (const file of fileAttachments) {
+      if (file.filename && file.url && isTextReadable(file.filename)) {
+        try {
+          const content = await fetchTextContent(file.url);
+          fileContents.push(`--- File: ${file.filename} ---\n${content}\n--- End of file ---`);
+        } catch (err) {
+          console.error(`Failed to read file ${file.filename}:`, err);
+          fileContents.push(`--- File: ${file.filename} ---\n[Failed to read file content]\n--- End of file ---`);
+        }
       }
     }
-  }
 
-  const systemPrompt = fileContents.length > 0
-    ? `${SYSTEM_PROMPT}\n\nThe user has uploaded the following files. Use the file contents to answer their question:\n\n${fileContents.join("\n\n")}`
-    : SYSTEM_PROMPT;
+    const systemPrompt = fileContents.length > 0
+      ? `${SYSTEM_PROMPT}\n\nThe user has uploaded the following files. Use the file contents to answer their question:\n\n${fileContents.join("\n\n")}`
+      : SYSTEM_PROMPT;
 
-  const { tools: mcpTools, closeAll } = await loadMcpTools();
+    let mcpTools: Record<string, unknown>;
+    let close: () => Promise<void>;
+    try {
+      ({ tools: mcpTools, closeAll: close } = await loadMcpTools());
+    } catch (err) {
+      console.error("Failed to load MCP tools:", err);
+      mcpTools = {};
+      close = async () => {};
+    }
+    closeAll = close;
 
-  const result = streamText({
-    model: createModel(selectedModel),
-    system: systemPrompt,
-    messages: await convertToModelMessages(
-      messages.map((message) => ({
-        ...message,
-        parts: message.parts.filter((part) => !(part.type === "file")),
-      }))
-    ),
-    tools: {
-      weather: weatherTool,
-      "generate-file": generateFileTool,
-      "url-fetch": urlFetchTool,
-      "qr-code": qrCodeTool,
-      "html-preview": htmlPreviewTool,
-      ...mcpTools,
-    },
-    stopWhen: stepCountIs(5),
-    onError: ({ error }) => {
-      console.error("streamText error:", error);
-      const msg = String(error);
-      if (msg.includes("429") || msg.includes("rate_limit") || msg.includes("quota")) {
-        console.error("Rate limit hit for model:", selectedModel);
+    let result;
+    try {
+      result = streamText({
+        model: createModel(selectedModel),
+        system: systemPrompt,
+        messages: await convertToModelMessages(
+          messages.map((message) => ({
+            ...message,
+            parts: message.parts.filter((part) => !(part.type === "file")),
+          }))
+        ),
+        tools: {
+          weather: weatherTool,
+          "generate-file": generateFileTool,
+          "url-fetch": urlFetchTool,
+          "qr-code": qrCodeTool,
+          "html-preview": htmlPreviewTool,
+          ...mcpTools,
+        },
+        stopWhen: stepCountIs(5),
+        onError: ({ error }) => {
+          console.error("streamText error:", error);
+          const msg = String(error);
+          if (msg.includes("429") || msg.includes("rate_limit") || msg.includes("quota")) {
+            console.error("Rate limit hit for model:", selectedModel);
+          }
+          void closeAll?.();
+        },
+        onFinish: async () => {
+          await closeAll?.();
+        },
+        onAbort: async () => {
+          await closeAll?.();
+        },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("Failed to start stream:", msg);
+      if (closeAll) await closeAll();
+      if (msg.includes("Unknown provider") || msg.includes("API key not configured")) {
+        return Response.json({ error: msg }, { status: 400 });
       }
-      void closeAll();
-    },
-    onFinish: async () => {
-      await closeAll();
-    },
-    onAbort: async () => {
-      await closeAll();
-    },
-  });
+      return Response.json({ error: "Failed to generate response" }, { status: 500 });
+    }
 
-  return createUIMessageStreamResponse({
-    stream: toUIMessageStream({
-      stream: result.stream,
-      sendReasoning: true,
-      sendSources: true,
-    }),
-  });
+    return createUIMessageStreamResponse({
+      stream: toUIMessageStream({
+        stream: result.stream,
+        sendReasoning: true,
+        sendSources: true,
+      }),
+    });
+  } catch (err) {
+    console.error("Unhandled error in POST /api/chat:", err);
+    if (closeAll) await closeAll();
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

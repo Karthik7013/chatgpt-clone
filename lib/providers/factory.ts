@@ -16,6 +16,10 @@ export function parseModelIdentifier(id: string): { providerId: string; modelId:
 export function createModel(identifier: string): LanguageModel {
   const { providerId, modelId } = parseModelIdentifier(identifier);
 
+  if (!modelId) {
+    throw new Error(`Invalid model identifier: "${identifier}". Expected format: "provider:modelId"`);
+  }
+
   const provider = PROVIDERS.find((p) => p.id === providerId);
   if (!provider) {
     throw new Error(`Unknown provider: "${providerId}" in "${identifier}"`);

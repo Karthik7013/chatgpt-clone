@@ -63,6 +63,7 @@ export function ChatWindow({
   const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
   const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
   const [uploading, setUploading] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
   const hasNotifiedFirstMessage = React.useRef(initialMessages.length > 0);
   const [versionState, setVersionState] = React.useState<VersionState>(() => loadVersions(chatId));
    // User message id currently awaiting a regenerated response.
@@ -250,7 +251,8 @@ export function ChatWindow({
       setPendingFiles((prev) => [...prev, ...uploadedFiles]);
     } catch (error) {
       console.error("Upload failed:", error);
-      // You could add a toast notification here
+      setUploadError(error instanceof Error ? error.message : "File upload failed");
+      setTimeout(() => setUploadError(null), 5000);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -330,6 +332,12 @@ export function ChatWindow({
       </Conversation>
 
       <div className="mx-auto w-full max-w-3xl px-4 bg-background border-border shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+        {uploadError ? (
+          <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger mt-2">
+            <CircleAlert className="size-3.5 shrink-0" />
+            <span className="flex-1">{uploadError}</span>
+          </div>
+        ) : null}
         <input
           ref={fileInputRef}
           type="file"

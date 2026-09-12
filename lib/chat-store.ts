@@ -28,7 +28,11 @@ function readIndex(): ChatSummary[] {
 
 function writeIndex(chats: ChatSummary[]) {
   if (!isBrowser()) return;
-  window.localStorage.setItem(INDEX_KEY, JSON.stringify(chats));
+  try {
+    window.localStorage.setItem(INDEX_KEY, JSON.stringify(chats));
+  } catch (err) {
+    console.error("Failed to write chat index:", err);
+  }
 }
 
 export function listChats(): ChatSummary[] {
@@ -86,7 +90,11 @@ export function loadMessages(id: string): UIMessage[] {
 
 export function saveMessages(id: string, messages: UIMessage[]) {
   if (!isBrowser()) return;
-  window.localStorage.setItem(messagesKey(id), JSON.stringify(messages));
+  try {
+    window.localStorage.setItem(messagesKey(id), JSON.stringify(messages));
+  } catch (err) {
+    console.error("Failed to save messages:", err);
+  }
 }
 
 /** Multiple assistant responses per user prompt, keyed by the user message id. */
@@ -111,7 +119,11 @@ export function loadVersions(id: string): VersionState {
 
 export function saveVersions(id: string, state: VersionState) {
   if (!isBrowser()) return;
-  window.localStorage.setItem(versionsKey(id), JSON.stringify(state));
+  try {
+    window.localStorage.setItem(versionsKey(id), JSON.stringify(state));
+  } catch (err) {
+    console.error("Failed to save versions:", err);
+  }
 }
 
 /** Derives a short chat title from the first user message's text parts. */

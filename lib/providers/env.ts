@@ -8,5 +8,5 @@ export function getProviderKey(providerId: string): string | undefined {
 
 export function isProviderConfigured(providerId: string): boolean {
   const key = getProviderKey(providerId);
-  return !!key && key.length > 0;
+  return !!key && key.trim().length > 0;
 }
