@@ -59,6 +59,7 @@ export function ChatWindow({
 }) {
   const [input, setInput] = React.useState("");
   const [model, setModel] = React.useState("openrouter:nvidia/nemotron-3.5-lightning:free");
+  const [webSearchEnabled, setWebSearchEnabled] = React.useState(true);
   const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
   const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
   const [uploading, setUploading] = React.useState(false);
@@ -126,7 +127,7 @@ export function ChatWindow({
     id: chatId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
-      body: { model },
+      body: { model, webSearchEnabled },
     }),
     onFinish: handleFinish,
   });
@@ -364,6 +365,14 @@ export function ChatWindow({
                 disabled={isBusy || uploading}
               />
               <ModelSelector model={model} onModelChange={setModel} />
+              <button
+                type="button"
+                onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+                title={webSearchEnabled ? "Web search: ON" : "Web search: OFF"}
+                className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${webSearchEnabled ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-surface-2"}`}
+              >
+                {webSearchEnabled ? "Search ON" : "Search OFF"}
+              </button>
             </div>
             <PromptInputSubmit status={status} disabled={uploading || (!input.trim() && pendingFiles.length === 0)} onStop={stop} />
           </PromptInputToolbar>

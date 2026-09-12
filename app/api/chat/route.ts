@@ -235,7 +235,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    const { messages, model } = body as { messages?: UIMessage[]; model?: string };
+    const { messages, model, webSearchEnabled } = body as { messages?: UIMessage[]; model?: string; webSearchEnabled?: boolean };
     if (!Array.isArray(messages) || messages.length === 0) {
       return Response.json({ error: "messages array required" }, { status: 400 });
     }
@@ -297,7 +297,7 @@ export async function POST(req: Request) {
           "generate-file": generateFileTool,
           "url-fetch": urlFetchTool,
           "qr-code": qrCodeTool,
-          "web-search": webSearchTool,
+          ...(webSearchEnabled !== false ? { "web-search": webSearchTool } : {}),
           ...mcpTools,
         },
         stopWhen: stepCountIs(5),
