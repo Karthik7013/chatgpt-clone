@@ -116,7 +116,7 @@ export function Sidebar({
       className={cn(
         "relative flex h-svh flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-in-out",
         open
-          ? "w-[var(--sidebar-width)]"
+          ? "w-[var(--sidebar-width)] overflow-hidden"
           : "w-[var(--sidebar-width-icon)] overflow-hidden",
         className
       )}
@@ -173,11 +173,11 @@ export function SidebarFooter({ className, ...props }: React.HTMLAttributes<HTML
 }
 
 export function SidebarMenu({ className, ...props }: React.HTMLAttributes<HTMLUListElement>) {
-  return <ul className={cn("flex flex-col gap-0.5", className)} {...props} />;
+  return <ul className={cn("flex flex-col gap-0.5 overflow-hidden", className)} {...props} />;
 }
 
 export function SidebarMenuItem({ className, ...props }: React.HTMLAttributes<HTMLLIElement>) {
-  return <li className={cn("group/item relative", className)} {...props} />;
+  return <li className={cn("group/item relative min-w-0", className)} {...props} />;
 }
 
 export const SidebarMenuButton = React.forwardRef<
