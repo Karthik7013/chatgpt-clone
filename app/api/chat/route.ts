@@ -23,8 +23,7 @@ Format answers in GitHub-flavored markdown when it helps readability (lists, tab
 You have a weather lookup tool — use it whenever the user asks about the weather or current conditions in any city, and cite the weather data in your answer.
 You have a file generation tool — use it when the user asks you to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.
 You have a URL fetch tool — use it when the user wants to read, summarize, or analyze any webpage.
-You have a QR code generator tool — use it when the user wants a QR code for any text or URL.
-You have an HTML preview tool — use it when the user wants to see how HTML/CSS code renders as a screenshot.`;
+You have a QR code generator tool — use it when the user wants a QR code for any text or URL.`;
 
 /** Maps Open-Meteo WMO weather codes to a short display condition. */
 function wmoToCondition(code: number): string {
@@ -154,43 +153,6 @@ const qrCodeTool = tool({
   },
 });
 
-const htmlPreviewTool = tool({
-  description: "Render HTML code and generate a screenshot preview. Use when the user wants to see how HTML/CSS looks rendered.",
-  inputSchema: asSchema(z.object({
-    html: z.string().describe("The HTML code to render"),
-    width: z.number().optional().describe("Viewport width in pixels (default 1280, max 1920)"),
-    height: z.number().optional().describe("Viewport height in pixels (default 800, max 2000)"),
-  })),
-  async execute({ html, width, height }) {
-    try {
-      const res = await fetch("https://screenshotapi.to/api/v1/public/html-to-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          html,
-          width: Math.min(width || 1280, 1920),
-          height: Math.min(height || 800, 2000),
-          format: "png",
-        }),
-        signal: AbortSignal.timeout(30000),
-      });
-      if (!res.ok) throw new Error(`Screenshot API returned ${res.status}`);
-      const blob = await res.blob();
-      const buffer = await blob.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString("base64");
-      const dataUrl = `data:image/png;base64,${base64}`;
-      return {
-        screenshotUrl: dataUrl,
-        width: width || 1280,
-        height: height || 800,
-        size: blob.size,
-      };
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Failed to generate screenshot");
-    }
-  },
-});
-
 const generateFileTool = tool({
   description: "Generate a file with content and upload it to Internet Archive. Use when the user asks to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.",
   inputSchema: asSchema(z.object({
@@ -303,7 +265,6 @@ export async function POST(req: Request) {
           "generate-file": generateFileTool,
           "url-fetch": urlFetchTool,
           "qr-code": qrCodeTool,
-          "html-preview": htmlPreviewTool,
           ...mcpTools,
         },
         stopWhen: stepCountIs(5),

@@ -48,7 +48,6 @@ import { WeatherCard } from "@/components/tool-cards/weather-card";
 import { FileCard } from "@/components/tool-cards/file-card";
 import { UrlCard } from "@/components/tool-cards/url-card";
 import { QrCard } from "@/components/tool-cards/qr-card";
-import { HtmlPreviewCard } from "@/components/tool-cards/html-preview-card";
 import { DefaultChatTransport } from "ai";
 
 export function ChatWindow({
@@ -569,17 +568,6 @@ function MessageBubble({
                     state={toolPart.state}
                     input={toolPart.input as { content: string; size?: number } | undefined}
                     output={toolPart.output as { qrCodeUrl: string; content: string; size: number } | undefined}
-                    errorText={toolPart.errorText}
-                  />
-                );
-              }
-              if (toolName === "html-preview") {
-                return (
-                  <HtmlPreviewCard
-                    key={index}
-                    state={toolPart.state}
-                    input={toolPart.input as { html: string; width?: number; height?: number } | undefined}
-                    output={toolPart.output as { screenshotUrl: string; width: number; height: number; size: number } | undefined}
                     errorText={toolPart.errorText}
                   />
                 );
