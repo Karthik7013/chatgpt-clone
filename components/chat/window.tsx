@@ -4,7 +4,7 @@ import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage, FileUIPart } from "ai";
 import { nanoid } from "nanoid";
-import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, Globe, RotateCcw } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, FileText, Globe, RotateCcw } from "lucide-react";
 
 import {
   loadMessages,
@@ -405,6 +405,10 @@ function MessageBubble({
     .filter((p): p is Extract<UIMessage["parts"][number], { type: "source-url" }> => p.type === "source-url")
     .map((p) => ({ url: p.url, title: p.title }));
 
+  const sourceDocs = message.parts
+    .filter((p): p is Extract<UIMessage["parts"][number], { type: "source-document" }> => p.type === "source-document")
+    .map((p) => ({ title: p.title, filename: p.filename, mediaType: p.mediaType }));
+
   const lastPartIndex = message.parts.length - 1;
   const [copied, setCopied] = React.useState(false);
   const copyTimer = React.useRef<number | null>(null);
@@ -606,6 +610,19 @@ function MessageBubble({
             return null;
           })}
           {sources.length > 0 ? <Sources sources={sources} /> : null}
+          {sourceDocs.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {sourceDocs.map((doc, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted-foreground"
+                >
+                  <FileText className="size-3" />
+                  {doc.title || doc.filename || "Document"}
+                </span>
+              ))}
+            </div>
+          ) : null}
           {message.role === "assistant" && versionControls ? (
             <div className="flex items-center gap-1 pt-1 text-muted-foreground">
               {copyButton}
