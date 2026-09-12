@@ -364,15 +364,15 @@ export function ChatWindow({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isBusy || uploading}
               />
-              <ModelSelector model={model} onModelChange={setModel} />
               <button
                 type="button"
                 onClick={() => setWebSearchEnabled(!webSearchEnabled)}
                 title={webSearchEnabled ? "Web search: ON" : "Web search: OFF"}
                 className={`rounded-md p-1.5 transition-colors ${webSearchEnabled ? "text-primary" : "text-muted-foreground hover:bg-surface-2"}`}
               >
-                <Globe className="size-4" fill={webSearchEnabled ? "currentColor" : "none"} />
+                <Globe className="size-4" />
               </button>
+              <ModelSelector model={model} onModelChange={setModel} />
             </div>
             <PromptInputSubmit status={status} disabled={uploading || (!input.trim() && pendingFiles.length === 0)} onStop={stop} />
           </PromptInputToolbar>
