@@ -4,7 +4,7 @@ import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage, FileUIPart } from "ai";
 import { nanoid } from "nanoid";
-import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, RotateCcw } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, Globe, RotateCcw } from "lucide-react";
 
 import {
   loadMessages,
@@ -369,9 +369,9 @@ export function ChatWindow({
                 type="button"
                 onClick={() => setWebSearchEnabled(!webSearchEnabled)}
                 title={webSearchEnabled ? "Web search: ON" : "Web search: OFF"}
-                className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${webSearchEnabled ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-surface-2"}`}
+                className={`rounded-md p-1.5 transition-colors ${webSearchEnabled ? "text-primary" : "text-muted-foreground hover:bg-surface-2"}`}
               >
-                {webSearchEnabled ? "Search ON" : "Search OFF"}
+                <Globe className="size-4" fill={webSearchEnabled ? "currentColor" : "none"} />
               </button>
             </div>
             <PromptInputSubmit status={status} disabled={uploading || (!input.trim() && pendingFiles.length === 0)} onStop={stop} />
