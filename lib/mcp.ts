@@ -9,7 +9,6 @@ export type McpServerConfig = {
 
 const MCP_SERVERS: McpServerConfig[] = [
   { name: "local", url: "http://localhost:3000/api/mcp" },
-  { name: "xdocs", url: "https://docs.x.com/mcp" },
   { name: "context7", url: "https://mcp.context7.com/mcp" },
 ];
 
