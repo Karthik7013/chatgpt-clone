@@ -10,6 +10,7 @@ export type ConversationProps = React.HTMLAttributes<HTMLDivElement>;
 
 const ConversationContext = React.createContext<{
   viewportRef: React.RefObject<HTMLDivElement | null>;
+  stickRef: React.MutableRefObject<boolean>;
   isAtBottom: boolean;
   scrollToBottom: (behavior?: ScrollBehavior) => void;
 } | null>(null);
@@ -54,21 +55,8 @@ export function Conversation({
     }
   }, [scrollKey, scrollToBottom]);
 
-  // Stay pinned to the bottom while content grows (streaming),
-  // but never yank the user if they've scrolled up to read history.
-  React.useLayoutEffect(() => {
-    const el = viewportRef.current;
-    const target = el?.firstElementChild;
-    if (!el || !target) return;
-    const ro = new ResizeObserver(() => {
-      if (stickRef.current) el.scrollTop = el.scrollHeight;
-    });
-    ro.observe(target);
-    return () => ro.disconnect();
-  }, []);
-
   return (
-    <ConversationContext.Provider value={{ viewportRef, isAtBottom, scrollToBottom }}>
+    <ConversationContext.Provider value={{ viewportRef, stickRef, isAtBottom, scrollToBottom }}>
       <div className={cn("relative flex-1 overflow-hidden", className)} {...props}>
         <div
           ref={viewportRef}
@@ -87,8 +75,24 @@ export function Conversation({
 }
 
 export function ConversationContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const ctx = React.useContext(ConversationContext);
+  const innerRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Observe the content container so scrolling stays pinned during streaming.
+  React.useEffect(() => {
+    const el = ctx?.viewportRef?.current;
+    const target = innerRef.current;
+    if (!el || !target) return;
+    const ro = new ResizeObserver(() => {
+      if (ctx?.stickRef.current) el.scrollTop = el.scrollHeight;
+    });
+    ro.observe(target);
+    return () => ro.disconnect();
+  }, [ctx]);
+
   return (
     <div
+      ref={innerRef}
       className={cn("mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6", className)}
       {...props}
     />
