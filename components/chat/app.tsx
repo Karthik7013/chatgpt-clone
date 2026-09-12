@@ -14,8 +14,8 @@ import {
   touchChat,
   type ChatSummary,
 } from "@/lib/chat-store";
-import { ChatSidebar } from "@/components/chat-sidebar";
-import { ChatWindow } from "@/components/chat-window";
+import { ChatSidebar } from "@/components/chat/sidebar";
+import { ChatWindow } from "@/components/chat/window";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   DropdownMenu,

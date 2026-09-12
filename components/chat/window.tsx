@@ -42,13 +42,13 @@ import {
   AttachmentInfo,
   type AttachmentData,
 } from "@/components/ai-elements/attachments";
-import { ModelSelector } from "@/components/ui/model-selector";
-import { TimeCard } from "@/components/time-card";
-import { WeatherCard } from "@/components/weather-card";
-import { FileCard } from "@/components/file-card";
-import { UrlCard } from "@/components/url-card";
-import { QrCard } from "@/components/qr-card";
-import { HtmlPreviewCard } from "@/components/html-preview-card";
+import { ModelSelector } from "@/components/model-selector";
+import { TimeCard } from "@/components/tool-cards/time-card";
+import { WeatherCard } from "@/components/tool-cards/weather-card";
+import { FileCard } from "@/components/tool-cards/file-card";
+import { UrlCard } from "@/components/tool-cards/url-card";
+import { QrCard } from "@/components/tool-cards/qr-card";
+import { HtmlPreviewCard } from "@/components/tool-cards/html-preview-card";
 import { DefaultChatTransport } from "ai";
 
 export function ChatWindow({
