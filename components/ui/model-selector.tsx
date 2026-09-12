@@ -17,13 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-const MODELS = [
-  { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", description: "Best quality (free)" },
-  { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash Lite", description: "Lightweight & fast" },
-  { id: "gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite", description: "Fast & efficient" },
-  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", description: "High volume (1000/day)" },
-];
+import { useProviders } from "@/lib/hooks/use-providers";
 
 export function ModelSelector({
   model,
@@ -33,7 +27,13 @@ export function ModelSelector({
   onModelChange: (model: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const selected = MODELS.find((m) => m.id === model) ?? MODELS[0];
+  const { providers, loading } = useProviders();
+
+  const allModels = providers.flatMap((p) =>
+    p.models.map((m) => ({ ...m, providerId: p.id, providerName: p.name }))
+  );
+
+  const selected = allModels.find((m) => `${m.providerId}:${m.id}` === model) ?? allModels[0];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -47,7 +47,7 @@ export function ModelSelector({
           className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           <Settings2 className="size-3" />
-          <span className="max-w-36 truncate">{selected.name}</span>
+          <span className="max-w-36 truncate">{selected?.name ?? "Select model"}</span>
           <ChevronsUpDown className="size-3 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -56,32 +56,47 @@ export function ModelSelector({
           <CommandInput placeholder="Search models…" />
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
-            <CommandGroup heading="Free Gemini models">
-              {MODELS.map((m) => (
-                <CommandItem
-                  key={m.id}
-                  value={`${m.name} ${m.id} ${m.description}`}
-                  onSelect={() => {
-                    onModelChange(m.id);
-                    setOpen(false);
-                  }}
-                  className="flex-col items-start gap-0.5"
-                >
-                  <span className="flex w-full items-center gap-2">
-                    <Check
-                      className={cn(
-                        "size-3.5 shrink-0",
-                        m.id === model ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    <span className="font-medium">{m.name}</span>
-                  </span>
-                  <span className="pl-5.5 text-xs text-muted-foreground">
-                    {m.description}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {loading ? (
+              <CommandGroup heading="Loading models…">
+                <CommandItem disabled>Loading…</CommandItem>
+              </CommandGroup>
+            ) : providers.length === 0 ? (
+              <CommandGroup heading="No providers configured">
+                <CommandItem disabled>Add API keys to .env.local</CommandItem>
+              </CommandGroup>
+            ) : (
+              providers.map((p) => (
+                <CommandGroup key={p.id} heading={p.name}>
+                  {p.models.map((m) => {
+                    const fullId = `${p.id}:${m.id}`;
+                    return (
+                      <CommandItem
+                        key={fullId}
+                        value={`${m.name} ${m.id} ${m.description} ${p.name}`}
+                        onSelect={() => {
+                          onModelChange(fullId);
+                          setOpen(false);
+                        }}
+                        className="flex-col items-start gap-0.5"
+                      >
+                        <span className="flex w-full items-center gap-2">
+                          <Check
+                            className={cn(
+                              "size-3.5 shrink-0",
+                              fullId === model ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <span className="font-medium">{m.name}</span>
+                        </span>
+                        <span className="pl-5.5 text-xs text-muted-foreground">
+                          {m.description}
+                        </span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              ))
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

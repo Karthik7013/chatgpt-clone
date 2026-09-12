@@ -46,6 +46,9 @@ import { ModelSelector } from "@/components/ui/model-selector";
 import { TimeCard } from "@/components/time-card";
 import { WeatherCard } from "@/components/weather-card";
 import { FileCard } from "@/components/file-card";
+import { UrlCard } from "@/components/url-card";
+import { QrCard } from "@/components/qr-card";
+import { HtmlPreviewCard } from "@/components/html-preview-card";
 import { DefaultChatTransport } from "ai";
 
 export function ChatWindow({
@@ -56,7 +59,7 @@ export function ChatWindow({
   onFirstMessage: (message: UIMessage) => void;
 }) {
   const [input, setInput] = React.useState("");
-  const [model, setModel] = React.useState("gemini-3.5-flash");
+  const [model, setModel] = React.useState("openrouter:openai/gpt-oss-20b:free");
   const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
   const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
   const [uploading, setUploading] = React.useState(false);
@@ -67,11 +70,11 @@ export function ChatWindow({
 
   function getErrorMessage(err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
+    if (msg.includes("429") || msg.includes("rate_limit") || msg.includes("quota")) {
       return "Rate limit exceeded. Try a different model or wait a moment.";
     }
     if (msg.includes("PERMISSION_DENIED") || msg.includes("403")) {
-      return "API key error. Check your Google AI API key.";
+      return "API key error. Check your provider API key in .env.local.";
     }
     if (msg.includes("INVALID_ARGUMENT") || msg.includes("400")) {
       return "Invalid request. The prompt or file may be too large.";
@@ -344,7 +347,7 @@ export function ChatWindow({
           <PromptInputTextarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Message Gemini…"
+            placeholder="Message…"
             disabled={isBusy}
           />
           <PromptInputToolbar>
@@ -536,6 +539,39 @@ function MessageBubble({
                     state={toolPart.state}
                     input={toolPart.input as { filename: string; content: string; description?: string } | undefined}
                     output={toolPart.output as { filename: string; description: string; downloadUrl: string; publicUrl: string; detailsUrl: string; size: number } | undefined}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
+              if (toolName === "url-fetch") {
+                return (
+                  <UrlCard
+                    key={index}
+                    state={toolPart.state}
+                    input={toolPart.input as { url: string } | undefined}
+                    output={toolPart.output as { url: string; title: string; content: string; totalLength: number; truncated: boolean } | undefined}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
+              if (toolName === "qr-code") {
+                return (
+                  <QrCard
+                    key={index}
+                    state={toolPart.state}
+                    input={toolPart.input as { content: string; size?: number } | undefined}
+                    output={toolPart.output as { qrCodeUrl: string; content: string; size: number } | undefined}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
+              if (toolName === "html-preview") {
+                return (
+                  <HtmlPreviewCard
+                    key={index}
+                    state={toolPart.state}
+                    input={toolPart.input as { html: string; width?: number; height?: number } | undefined}
+                    output={toolPart.output as { screenshotUrl: string; width: number; height: number; size: number } | undefined}
                     errorText={toolPart.errorText}
                   />
                 );

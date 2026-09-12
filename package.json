@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.64",
     "@ai-sdk/mcp": "^2.0.45",
+    "@ai-sdk/openai": "^3.0.112",
     "@ai-sdk/react": "^4.0.96",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@radix-ui/react-dialog": "^1.1.23",

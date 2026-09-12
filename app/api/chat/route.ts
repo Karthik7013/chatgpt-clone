@@ -1,4 +1,4 @@
-import { google } from "@ai-sdk/google";
+import { createModel } from "@/lib/providers/factory";
 import { z } from "zod";
 import { loadMcpTools } from "@/lib/mcp";
 import { isTextReadable, fetchTextContent } from "@/lib/file-reader";
@@ -18,10 +18,13 @@ export const maxDuration = 60;
 
 const WORKER_URL = "https://ia-upload.karthiktumala143.workers.dev/";
 
-const SYSTEM_PROMPT = `You are a helpful, direct assistant in a Gemini-powered demo app.
+const SYSTEM_PROMPT = `You are a helpful, direct assistant.
 Format answers in GitHub-flavored markdown when it helps readability (lists, tables, code fences with a language tag).
 You have a weather lookup tool — use it whenever the user asks about the weather or current conditions in any city, and cite the weather data in your answer.
-You have a file generation tool — use it when the user asks you to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.`;
+You have a file generation tool — use it when the user asks you to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.
+You have a URL fetch tool — use it when the user wants to read, summarize, or analyze any webpage.
+You have a QR code generator tool — use it when the user wants a QR code for any text or URL.
+You have an HTML preview tool — use it when the user wants to see how HTML/CSS code renders as a screenshot.`;
 
 /** Maps Open-Meteo WMO weather codes to a short display condition. */
 function wmoToCondition(code: number): string {
@@ -85,6 +88,109 @@ const weatherTool = tool({
   },
 });
 
+const urlFetchTool = tool({
+  description: "Fetch and read the content of any webpage. Use when the user wants to read, summarize, or analyze a website.",
+  inputSchema: asSchema(z.object({
+    url: z.string().describe("The URL to fetch (must start with http:// or https://)"),
+  })),
+  async execute({ url }) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+        signal: AbortSignal.timeout(15000),
+        redirect: "follow",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const html = await res.text();
+      const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : new URL(url).hostname;
+      const content = html
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const preview = content.slice(0, 5000);
+      return {
+        url,
+        title,
+        content: preview,
+        totalLength: content.length,
+        truncated: content.length > 5000,
+      };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Failed to fetch URL");
+    }
+  },
+});
+
+const qrCodeTool = tool({
+  description: "Generate a QR code for any URL or text. Use when the user wants a QR code.",
+  inputSchema: asSchema(z.object({
+    content: z.string().describe("Text or URL to encode in the QR code"),
+    size: z.number().optional().describe("Image size in pixels (default 300, max 1200)"),
+  })),
+  async execute({ content, size }) {
+    try {
+      const qrSize = Math.min(Math.max(size || 300, 64), 1200);
+      const qrUrl = `https://qrcodecat.com/api/qrcode?data=${encodeURIComponent(content)}&size=${qrSize}&format=png&margin=4&color=0f172a&bgcolor=ffffff`;
+      const res = await fetch(qrUrl, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) throw new Error(`QR API returned ${res.status}`);
+      const blob = await res.blob();
+      const buffer = await blob.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString("base64");
+      const dataUrl = `data:image/png;base64,${base64}`;
+      return {
+        qrCodeUrl: dataUrl,
+        content,
+        size: qrSize,
+      };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Failed to generate QR code");
+    }
+  },
+});
+
+const htmlPreviewTool = tool({
+  description: "Render HTML code and generate a screenshot preview. Use when the user wants to see how HTML/CSS looks rendered.",
+  inputSchema: asSchema(z.object({
+    html: z.string().describe("The HTML code to render"),
+    width: z.number().optional().describe("Viewport width in pixels (default 1280, max 1920)"),
+    height: z.number().optional().describe("Viewport height in pixels (default 800, max 2000)"),
+  })),
+  async execute({ html, width, height }) {
+    try {
+      const res = await fetch("https://screenshotapi.to/api/v1/public/html-to-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          html,
+          width: Math.min(width || 1280, 1920),
+          height: Math.min(height || 800, 2000),
+          format: "png",
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) throw new Error(`Screenshot API returned ${res.status}`);
+      const blob = await res.blob();
+      const buffer = await blob.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString("base64");
+      const dataUrl = `data:image/png;base64,${base64}`;
+      return {
+        screenshotUrl: dataUrl,
+        width: width || 1280,
+        height: height || 800,
+        size: blob.size,
+      };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Failed to generate screenshot");
+    }
+  },
+});
+
 const generateFileTool = tool({
   description: "Generate a file with content and upload it to Internet Archive. Use when the user asks to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.",
   inputSchema: asSchema(z.object({
@@ -127,7 +233,7 @@ const generateFileTool = tool({
 export async function POST(req: Request) {
   const body = await req.json();
   const { messages, model }: { messages: UIMessage[]; model?: string } = body;
-  const selectedModel = model ?? "gemini-3.5-flash";
+  const selectedModel = model ?? "openrouter:openai/gpt-oss-20b:free";
 
   // Extract file attachments from the last user message
   const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
@@ -160,7 +266,7 @@ export async function POST(req: Request) {
   const { tools: mcpTools, closeAll } = await loadMcpTools();
 
   const result = streamText({
-    model: google(selectedModel as string),
+    model: createModel(selectedModel),
     system: systemPrompt,
     messages: await convertToModelMessages(
       messages.map((message) => ({
@@ -171,13 +277,16 @@ export async function POST(req: Request) {
     tools: {
       weather: weatherTool,
       "generate-file": generateFileTool,
+      "url-fetch": urlFetchTool,
+      "qr-code": qrCodeTool,
+      "html-preview": htmlPreviewTool,
       ...mcpTools,
     },
     stopWhen: stepCountIs(5),
     onError: ({ error }) => {
       console.error("streamText error:", error);
       const msg = String(error);
-      if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
+      if (msg.includes("429") || msg.includes("rate_limit") || msg.includes("quota")) {
         console.error("Rate limit hit for model:", selectedModel);
       }
       void closeAll();
