@@ -23,7 +23,8 @@ Format answers in GitHub-flavored markdown when it helps readability (lists, tab
 You have a weather lookup tool — use it whenever the user asks about the weather or current conditions in any city, and cite the weather data in your answer.
 You have a file generation tool — use it when the user asks you to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.
 You have a URL fetch tool — use it when the user wants to read, summarize, or analyze any webpage.
-You have a QR code generator tool — use it when the user wants a QR code for any text or URL.`;
+You have a QR code generator tool — use it when the user wants a QR code for any text or URL.
+You have a web search tool — use it when the user asks about current events, recent news, or anything you don't have knowledge about.`;
 
 /** Maps Open-Meteo WMO weather codes to a short display condition. */
 function wmoToCondition(code: number): string {
@@ -153,6 +154,37 @@ const qrCodeTool = tool({
   },
 });
 
+const webSearchTool = tool({
+  description: "Search the web for real-time information. Use when the user asks about current events, recent news, or anything you don't have knowledge about.",
+  inputSchema: asSchema(z.object({
+    query: z.string().describe("The search query"),
+  })),
+  async execute({ query }) {
+    try {
+      const res = await fetch(
+        `https://freeserp.ai/api.php?q=${encodeURIComponent(query)}&size=5`,
+        { signal: AbortSignal.timeout(10000) },
+      );
+      if (!res.ok) throw new Error(`Search API returned ${res.status}`);
+      const data = await res.json() as {
+        ok: boolean;
+        results: Array<{ title: string; url: string; ai_summary: string; domain: string }>;
+      };
+      if (!data.ok) throw new Error("Search failed");
+      return {
+        results: data.results.map((r) => ({
+          title: r.title,
+          url: r.url,
+          summary: r.ai_summary,
+          domain: r.domain,
+        })),
+      };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Web search failed");
+    }
+  },
+});
+
 const generateFileTool = tool({
   description: "Generate a file with content and upload it to Internet Archive. Use when the user asks to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.",
   inputSchema: asSchema(z.object({
@@ -265,6 +297,7 @@ export async function POST(req: Request) {
           "generate-file": generateFileTool,
           "url-fetch": urlFetchTool,
           "qr-code": qrCodeTool,
+          "web-search": webSearchTool,
           ...mcpTools,
         },
         stopWhen: stepCountIs(5),
