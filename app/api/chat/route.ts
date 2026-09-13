@@ -24,7 +24,8 @@ You have a weather lookup tool — use it whenever the user asks about the weath
 You have a file generation tool — use it when the user asks you to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.
 You have a URL fetch tool — use it when the user wants to read, summarize, or analyze any webpage.
 You have a QR code generator tool — use it when the user wants a QR code for any text or URL.
-You have a web search tool — use it when the user asks about current events, recent news, or anything you don't have knowledge about.`;
+You have a web search tool — use it when the user asks about current events, recent news, or anything you don't have knowledge about.
+You have a time lookup tool — use it whenever the user asks what time or day it is.`;
 
 /** Maps Open-Meteo WMO weather codes to a short display condition. */
 function wmoToCondition(code: number): string {
@@ -224,6 +225,30 @@ const generateFileTool = tool({
   },
 });
 
+const getTimeTool = tool({
+  description: "Get the current date and time. Use it whenever the user asks what time or day it is.",
+  inputSchema: asSchema(z.object({
+    timezone: z.string().optional().describe("IANA timezone name, e.g. Europe/Berlin or America/New_York. Defaults to UTC."),
+  })),
+  async execute({ timezone }) {
+    const tz = timezone?.trim() || "UTC";
+    try {
+      const now = new Date();
+      const text = `Current time: ${new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "full",
+        timeStyle: "long",
+        timeZone: tz,
+      }).format(now)} (${tz})`;
+      return { content: [{ type: "text", text }] };
+    } catch {
+      return {
+        content: [{ type: "text", text: `Unknown timezone "${tz}". Use an IANA name like Europe/Berlin.` }],
+        isError: true,
+      };
+    }
+  },
+});
+
 export async function POST(req: Request) {
   let closeAll: (() => Promise<void>) | undefined;
 
@@ -297,6 +322,7 @@ export async function POST(req: Request) {
           "generate-file": generateFileTool,
           "url-fetch": urlFetchTool,
           "qr-code": qrCodeTool,
+          "get-time": getTimeTool,
           ...(webSearchEnabled !== false ? { "web-search": webSearchTool } : {}),
           ...mcpTools,
         },

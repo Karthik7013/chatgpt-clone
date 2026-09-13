@@ -540,7 +540,7 @@ function MessageBubble({
                 );
               }
               // MCP tools arrive namespaced as <server>__get-time.
-              if (toolName.endsWith("__get-time")) {
+              if (toolName === "get-time" || toolName.endsWith("__get-time")) {
                 return (
                   <TimeCard
                     key={index}

@@ -8,7 +8,6 @@ export type McpServerConfig = {
 };
 
 const MCP_SERVERS: McpServerConfig[] = [
-  { name: "local", url: "http://localhost:3000/api/mcp" },
   { name: "context7", url: "https://mcp.context7.com/mcp" },
 ];
 
@@ -37,10 +36,17 @@ export function parseMcpConfig(): McpServerConfig[] {
   }));
 }
 
+let cachedTools: Record<string, unknown> | null = null;
+let cachedClose: (() => Promise<void>) | null = null;
+
 export async function loadMcpTools(): Promise<{
   tools: Record<string, unknown>;
   closeAll: () => Promise<void>;
 }> {
+  if (cachedTools) {
+    return { tools: cachedTools, closeAll: cachedClose ?? (async () => {}) };
+  }
+
   const tools: Record<string, unknown> = {};
   const clients: McpClient[] = [];
 
@@ -57,7 +63,7 @@ export async function loadMcpTools(): Promise<{
               ? { headers: { Authorization: `Bearer ${server.apiKey}` } }
               : {}),
           },
-          initializationOptions: { timeout: 10000 },
+          initializationOptions: { timeout: 3000 },
         })) as unknown as McpClient;
         clients.push(client);
         const serverTools = await client.tools();
@@ -85,6 +91,9 @@ export async function loadMcpTools(): Promise<{
       }),
     );
   };
+
+  cachedTools = tools;
+  cachedClose = closeAll;
 
   return { tools, closeAll };
 }
