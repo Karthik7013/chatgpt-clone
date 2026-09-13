@@ -12,8 +12,6 @@ interface FileCardProps {
     filename: string;
     description: string;
     downloadUrl: string;
-    publicUrl: string;
-    detailsUrl: string;
     size: number;
   };
   errorText?: string;

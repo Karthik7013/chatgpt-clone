@@ -557,7 +557,7 @@ function MessageBubble({
                     key={index}
                     state={toolPart.state}
                     input={toolPart.input as { filename: string; content: string; description?: string } | undefined}
-                    output={toolPart.output as { filename: string; description: string; downloadUrl: string; publicUrl: string; detailsUrl: string; size: number } | undefined}
+                    output={toolPart.output as { filename: string; description: string; downloadUrl: string; size: number } | undefined}
                     errorText={toolPart.errorText}
                   />
                 );

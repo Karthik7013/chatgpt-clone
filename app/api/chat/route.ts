@@ -175,8 +175,6 @@ const generateFileTool = tool({
         filename: data.fileName,
         description: description || `Generated ${filename}`,
         downloadUrl: data.instantTmpUrl || data.instantDownloadUrl,
-        publicUrl: data.publicDownloadUrl,
-        detailsUrl: data.detailsUrl,
         size: content.length,
       };
     } catch (err) {

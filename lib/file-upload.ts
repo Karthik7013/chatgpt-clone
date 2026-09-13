@@ -28,8 +28,6 @@ export interface UploadResult {
   fileName: string;
   instantTmpUrl: string | null;
   instantDownloadUrl: string;
-  publicDownloadUrl: string;
-  detailsUrl: string;
 }
 
 export function validateFile(file: File): string | null {
