@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { UIMessage } from "ai";
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon, PanelRightOpenIcon, PanelRightCloseIcon } from "lucide-react";
+import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 import {
   createChat,
@@ -35,7 +35,6 @@ export function ChatApp() {
   const [ready, setReady] = React.useState(false);
   const [renamingHeader, setRenamingHeader] = React.useState(false);
   const [headerDraft, setHeaderDraft] = React.useState("");
-  const [showArtifact, setShowArtifact] = React.useState(false);
 
   const activeTitle = chats.find((c) => c.id === activeChatId)?.title ?? "New chat";
   const activeChatMessageCount = React.useMemo(
@@ -152,14 +151,6 @@ export function ChatApp() {
                 </span>
               )}
               <div className="ml-auto flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  aria-label={showArtifact ? "Close artifact panel" : "Open artifact panel"}
-                  onClick={() => setShowArtifact(!showArtifact)}
-                  className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-                >
-                  {showArtifact ? <PanelRightCloseIcon className="size-4" /> : <PanelRightOpenIcon className="size-4" />}
-                </button>
                 <ThemeToggle />
                 {activeChatMessageCount > 0 && (
                   <DropdownMenu>
@@ -189,17 +180,15 @@ export function ChatApp() {
                 )}
               </div>
             </header>
-            <ChatWindow
-              key={activeChatId}
-              chatId={activeChatId}
-              onFirstMessage={(message) => handleFirstMessage(activeChatId, message)}
-            />
-          </div>
 
-          {/* Artifact Column */}
-          {showArtifact && (
-            <div className="w-96 shrink-0 border-l border-border" />
-          )}
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <ChatWindow
+                key={activeChatId}
+                chatId={activeChatId}
+                onFirstMessage={(message) => handleFirstMessage(activeChatId, message)}
+              />
+            </div>
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

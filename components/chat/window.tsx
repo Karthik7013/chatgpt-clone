@@ -330,7 +330,7 @@ export function ChatWindow({
         <ConversationScrollButton />
       </Conversation>
 
-      <div className="mx-auto w-full shrink-0 max-w-3xl px-4 md:px-0 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+      <div className="mx-auto w-full max-w-3xl px-4 md:px-0 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
         {uploadError ? (
           <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger mt-2">
             <CircleAlert className="size-3.5 shrink-0" />
