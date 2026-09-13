@@ -1,7 +1,7 @@
 import { createModel } from "@/lib/providers/factory";
 import { z } from "zod";
 import { loadMcpTools } from "@/lib/mcp";
-import { isTextReadable, fetchTextContent } from "@/lib/file-reader";
+import { fetchAllFileContents } from "@/lib/file-reader";
 import {
   asSchema,
   convertToModelMessages,
@@ -227,33 +227,30 @@ export async function POST(req: Request) {
 
     const selectedModel = model ?? "openrouter:nvidia/nemotron-3.5-lightning:free";
 
-    // Extract file attachments from the last user message
-    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
-    const fileAttachments = lastUserMessage?.parts
-      ?.filter((p): p is Extract<UIMessage["parts"][number], { type: "file" }> => p.type === "file")
-      .map((p) => ({
-        filename: p.filename,
-        url: p.url,
-        mediaType: p.mediaType,
-      })) ?? [];
-
-    // Fetch content from text-readable files
-    const fileContents: string[] = [];
-    for (const file of fileAttachments) {
-      if (file.filename && file.url && isTextReadable(file.filename)) {
-        try {
-          const content = await fetchTextContent(file.url);
-          fileContents.push(`--- File: ${file.filename} ---\n${content}\n--- End of file ---`);
-        } catch (err) {
-          console.error(`Failed to read file ${file.filename}:`, err);
-          fileContents.push(`--- File: ${file.filename} ---\n[Failed to read file content]\n--- End of file ---`);
-        }
-      }
-    }
-
-    const systemPrompt = fileContents.length > 0
-      ? `${SYSTEM_PROMPT}\n\nThe user has uploaded the following files. Use the file contents to answer their question:\n\n${fileContents.join("\n\n")}`
-      : SYSTEM_PROMPT;
+    // Read file contents from all user messages in parallel
+    const messagesWithFiles = await Promise.all(
+      messages.map(async (message) => {
+        if (message.role !== "user") return message;
+        const fileParts = message.parts?.filter(
+          (p): p is Extract<UIMessage["parts"][number], { type: "file" }> =>
+            p.type === "file",
+        );
+        if (!fileParts?.length) return message;
+        const fileContents = await fetchAllFileContents(
+          fileParts.map((p) => ({ filename: p.filename, url: p.url, mediaType: p.mediaType })),
+        );
+        if (!fileContents.length) return message;
+        const textParts = message.parts?.filter((p) => p.type === "text") ?? [];
+        const fileText = fileContents.join("\n\n");
+        return {
+          ...message,
+          parts: [
+            ...textParts,
+            { type: "text" as const, text: fileText },
+          ],
+        };
+      }),
+    );
 
     let mcpTools: Record<string, unknown>;
     let close: () => Promise<void>;
@@ -270,9 +267,9 @@ export async function POST(req: Request) {
     try {
       result = streamText({
         model: createModel(selectedModel),
-        system: systemPrompt,
+        system: SYSTEM_PROMPT,
         messages: await convertToModelMessages(
-          messages.map((message) => ({
+          messagesWithFiles.map((message) => ({
             ...message,
             parts: message.parts.filter((part) => !(part.type === "file")),
           }))
