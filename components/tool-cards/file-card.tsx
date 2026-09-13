@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCodeIcon, DownloadIcon, ExternalLinkIcon, Loader2Icon } from "lucide-react";
+import { FileCodeIcon, DownloadIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ToolState = "input-streaming" | "input-available" | "output-available" | "output-error";
@@ -127,12 +127,6 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
           <a href={output?.downloadUrl} target="_blank" rel="noopener noreferrer">
             <DownloadIcon className="size-3" />
             Download
-          </a>
-        </Button>
-        <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs" asChild>
-          <a href={output?.detailsUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLinkIcon className="size-3" />
-            View on Archive
           </a>
         </Button>
       </div>

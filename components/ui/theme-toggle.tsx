@@ -24,6 +24,8 @@ export function ThemeToggle() {
       root.classList.remove("dark");
     }
     localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", isDark ? "#262624" : "#faf9f5");
   }, [isDark]);
 
   return (

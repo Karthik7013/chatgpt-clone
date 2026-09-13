@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Settings2 } from "lucide-react";
+import { Check, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,11 +44,10 @@ export function ModelSelector({
           role="combobox"
           aria-expanded={open}
           aria-label="Select model"
-          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          className="w-40 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
-          <Settings2 className="size-3" />
-          <span className="max-w-36 truncate">{selected?.name ?? "Select model"}</span>
-          <ChevronsUpDown className="size-3 shrink-0 opacity-50" />
+          <Settings2 className="size-3 shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{selected?.name ?? "Select model"}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-0">

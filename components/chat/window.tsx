@@ -278,7 +278,7 @@ export function ChatWindow({
       <Conversation scrollKey={lastUserMessageId ?? "empty"}>
         <ConversationContent>
           {messages.length === 0 ? (
-            <EmptyHome onSuggest={setInput} />
+            <EmptyHome />
           ) : (
             messages.map((message, i) => {
               const prev = i > 0 ? messages[i - 1] : undefined;
