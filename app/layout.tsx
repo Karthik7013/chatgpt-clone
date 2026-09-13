@@ -2,9 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Chat — AI SDK Demo",
+  title: "Gemini Chat",
   description:
-    "A Gemini-powered interface built with Next.js, shadcn/ui, AI Elements, and the Vercel AI SDK.",
+    "AI-powered chat interface built with Next.js, shadcn/ui, AI Elements, and the Vercel AI SDK.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Gemini Chat",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -15,6 +24,8 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#262624" media="(prefers-color-scheme: dark)" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <link rel="apple-touch-icon" href="/icon-192.svg" />
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem("theme"),c=t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches),m=document.querySelector('meta[name="theme-color"]');if(c){document.documentElement.classList.add("dark");if(m)m.content="#262624"}else{if(m)m.content="#faf9f5"}}catch(e){}`,

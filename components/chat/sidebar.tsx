@@ -282,7 +282,7 @@ function ChatListItem({
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton isActive={active} onClick={onSelect} title={chat.title}>
+      <SidebarMenuButton isActive={active} onClick={onSelect} title={chat.title} className="pr-8">
         <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate">{chat.title}</span>
       </SidebarMenuButton>

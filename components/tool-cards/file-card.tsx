@@ -53,7 +53,7 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
     <div className="flex p-4 items-center gap-2 rounded-xl border border-border bg-card ">
       <FileText className="size-6 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{filename}</span>
-      <Button asChild>
+      <Button variant={'outline'} asChild>
         <a href={output?.downloadUrl} target="_blank" rel="noopener noreferrer">
           <DownloadIcon className="size-3" />
           Download
