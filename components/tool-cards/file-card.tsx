@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCodeIcon, DownloadIcon, Loader2Icon } from "lucide-react";
+import { FileCodeIcon, FileIcon, DownloadIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ToolState = "input-streaming" | "input-available" | "output-available" | "output-error";
@@ -17,36 +17,8 @@ interface FileCardProps {
   errorText?: string;
 }
 
-function getFileIcon(filename: string) {
-  const ext = filename.split(".").pop()?.toLowerCase();
-  const iconMap: Record<string, string> = {
-    js: "\u{1F4DC}",
-    jsx: "\u{269B}\u{FE0F}",
-    ts: "\u{1F4D8}",
-    tsx: "\u{269B}\u{FE0F}",
-    py: "\u{1F40D}",
-    java: "\u{2615}",
-    go: "\u{1F535}",
-    rs: "\u{1F980}",
-    html: "\u{1F310}",
-    css: "\u{1F3A8}",
-    json: "\u{1F4CB}",
-    md: "\u{1F4DD}",
-    yaml: "\u{2699}\u{FE0F}",
-    yml: "\u{2699}\u{FE0F}",
-    toml: "\u{2699}\u{FE0F}",
-    sh: "\u{1F5A5}\u{FE0F}",
-    bash: "\u{1F5A5}\u{FE0F}",
-    txt: "\u{1F4C4}",
-    csv: "\u{1F4CA}",
-    xml: "\u{1F4F1}",
-  };
-  return iconMap[ext || ""] || "\u{1F4C4}";
-}
-
 export function FileCard({ state, input, output, errorText }: FileCardProps) {
   const filename = output?.filename || input?.filename || "file";
-  const icon = getFileIcon(filename);
 
   if (state === "output-error") {
     return (
@@ -79,7 +51,7 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
 
   return (
     <div className="flex max-w-sm items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
-      <span className="text-base">{icon}</span>
+      <FileIcon className="size-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{filename}</span>
       <Button size="sm" className="h-6 gap-1 text-xs" asChild>
         <a href={output?.downloadUrl} target="_blank" rel="noopener noreferrer">
