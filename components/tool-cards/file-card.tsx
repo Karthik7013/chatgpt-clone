@@ -78,7 +78,7 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
+    <div className="flex max-w-sm items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
       <span className="text-base">{icon}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{filename}</span>
       <Button size="sm" className="h-6 gap-1 text-xs" asChild>
