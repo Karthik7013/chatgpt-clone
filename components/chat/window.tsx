@@ -57,7 +57,7 @@ export function ChatWindow({
   onFirstMessage: (message: UIMessage) => void;
 }) {
   const [input, setInput] = React.useState("");
-  const [model, setModel] = React.useState("openrouter:nvidia/nemotron-3.5-lightning:free");
+  const [model, setModel] = React.useState("kilo:kilo-auto/free");
   const [webSearchEnabled, setWebSearchEnabled] = React.useState(true);
   const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
   const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
@@ -330,7 +330,7 @@ export function ChatWindow({
         <ConversationScrollButton />
       </Conversation>
 
-      <div className="mx-auto w-full max-w-3xl px-4 bg-background border-border shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+      <div className="mx-auto w-full max-w-3xl bg-background border-border shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
         {uploadError ? (
           <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger mt-2">
             <CircleAlert className="size-3.5 shrink-0" />

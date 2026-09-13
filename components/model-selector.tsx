@@ -44,7 +44,7 @@ export function ModelSelector({
           role="combobox"
           aria-expanded={open}
           aria-label="Select model"
-          className="w-40 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          className="w-fit max-w-40 gap-1.5 text-xs text-left text-muted-foreground hover:text-foreground"
         >
           <Settings2 className="size-3 shrink-0" />
           <span className="min-w-0 flex-1 truncate">{selected?.name ?? "Select model"}</span>
@@ -52,7 +52,7 @@ export function ModelSelector({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-0">
         <Command>
-          <CommandInput placeholder="Search models…" />
+          <CommandInput placeholder="Search models…" className="text-left" />
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
             {loading ? (

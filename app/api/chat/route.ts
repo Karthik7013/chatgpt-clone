@@ -223,7 +223,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "messages array required" }, { status: 400 });
     }
 
-    const selectedModel = model ?? "openrouter:nvidia/nemotron-3.5-lightning:free";
+    const selectedModel = model ?? "kilo:kilo-auto/free";
 
     // Read file contents from all user messages in parallel
     const messagesWithFiles = await Promise.all(
