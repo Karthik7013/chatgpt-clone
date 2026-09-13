@@ -22,7 +22,6 @@ const SYSTEM_PROMPT = `You are a helpful, direct assistant.
 Format answers in GitHub-flavored markdown when it helps readability (lists, tables, code fences with a language tag).
 You have a weather lookup tool — use it whenever the user asks about the weather or current conditions in any city, and cite the weather data in your answer.
 You have a file generation tool — use it when the user asks you to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.
-You have a URL fetch tool — use it when the user wants to read, summarize, or analyze any webpage.
 You have a QR code generator tool — use it when the user wants a QR code for any text or URL.
 You have a web search tool — use it when the user asks about current events, recent news, or anything you don't have knowledge about.
 You have a time lookup tool — use it whenever the user asks what time or day it is.`;
@@ -85,45 +84,6 @@ const weatherTool = tool({
       throw new Error(
         err instanceof Error ? err.message : "weather lookup failed",
       );
-    }
-  },
-});
-
-const urlFetchTool = tool({
-  description: "Fetch and read the content of any webpage. Use when the user wants to read, summarize, or analyze a website.",
-  inputSchema: asSchema(z.object({
-    url: z.string().describe("The URL to fetch (must start with http:// or https://)"),
-  })),
-  async execute({ url }) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
-        signal: AbortSignal.timeout(15000),
-        redirect: "follow",
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-      const html = await res.text();
-      const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
-      const title = titleMatch ? titleMatch[1].trim() : new URL(url).hostname;
-      const content = html
-        .replace(/<script[\s\S]*?<\/script>/gi, "")
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
-        .replace(/<[^>]*>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-      const preview = content.slice(0, 5000);
-      return {
-        url,
-        title,
-        content: preview,
-        totalLength: content.length,
-        truncated: content.length > 5000,
-      };
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Failed to fetch URL");
     }
   },
 });
@@ -320,7 +280,6 @@ export async function POST(req: Request) {
         tools: {
           weather: weatherTool,
           "generate-file": generateFileTool,
-          "url-fetch": urlFetchTool,
           "qr-code": qrCodeTool,
           "get-time": getTimeTool,
           ...(webSearchEnabled !== false ? { "web-search": webSearchTool } : {}),

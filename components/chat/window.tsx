@@ -46,7 +46,6 @@ import { ModelSelector } from "@/components/model-selector";
 import { TimeCard } from "@/components/tool-cards/time-card";
 import { WeatherCard } from "@/components/tool-cards/weather-card";
 import { FileCard } from "@/components/tool-cards/file-card";
-import { UrlCard } from "@/components/tool-cards/url-card";
 import { QrCard } from "@/components/tool-cards/qr-card";
 import { DefaultChatTransport } from "ai";
 
@@ -559,17 +558,6 @@ function MessageBubble({
                     state={toolPart.state}
                     input={toolPart.input as { filename: string; content: string; description?: string } | undefined}
                     output={toolPart.output as { filename: string; description: string; downloadUrl: string; publicUrl: string; detailsUrl: string; size: number } | undefined}
-                    errorText={toolPart.errorText}
-                  />
-                );
-              }
-              if (toolName === "url-fetch") {
-                return (
-                  <UrlCard
-                    key={index}
-                    state={toolPart.state}
-                    input={toolPart.input as { url: string } | undefined}
-                    output={toolPart.output as { url: string; title: string; content: string; totalLength: number; truncated: boolean } | undefined}
                     errorText={toolPart.errorText}
                   />
                 );
