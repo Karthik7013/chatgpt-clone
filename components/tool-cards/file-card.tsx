@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCodeIcon, FileIcon, DownloadIcon, Loader2Icon } from "lucide-react";
+import { FileIcon, DownloadIcon, Loader2Icon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ToolState = "input-streaming" | "input-available" | "output-available" | "output-error";
@@ -24,7 +24,7 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
     return (
       <div className="overflow-hidden rounded-xl border border-danger/30 bg-danger/10">
         <div className="flex items-center gap-2 px-4 py-3">
-          <FileCodeIcon className="size-4 text-danger" />
+          <FileText className="size-4 text-danger" />
           <span className="text-sm font-medium text-danger">Failed to generate {filename}</span>
         </div>
         {errorText && (
@@ -50,10 +50,10 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
   }
 
   return (
-    <div className="flex max-w-sm items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
-      <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+    <div className="flex p-4 items-center gap-2 rounded-xl border border-border bg-card ">
+      <FileText className="size-6 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{filename}</span>
-      <Button size="sm" className="h-6 gap-1 text-xs" asChild>
+      <Button asChild>
         <a href={output?.downloadUrl} target="_blank" rel="noopener noreferrer">
           <DownloadIcon className="size-3" />
           Download
