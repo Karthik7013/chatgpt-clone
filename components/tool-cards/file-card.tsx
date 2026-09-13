@@ -44,15 +44,9 @@ function getFileIcon(filename: string) {
   return iconMap[ext || ""] || "\u{1F4C4}";
 }
 
-function getFileExtension(filename: string) {
-  return filename.split(".").pop()?.toLowerCase() || "";
-}
-
 export function FileCard({ state, input, output, errorText }: FileCardProps) {
   const filename = output?.filename || input?.filename || "file";
-  const description = output?.description || input?.description || "";
   const icon = getFileIcon(filename);
-  const ext = getFileExtension(filename);
 
   if (state === "output-error") {
     return (
@@ -84,50 +78,15 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <span className="text-xl">{icon}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate font-medium">{filename}</span>
-            {ext && (
-              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                {ext}
-              </span>
-            )}
-          </div>
-          {description && (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
-          )}
-        </div>
-        {output?.size != null && (
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {output.size < 1024
-              ? `${output.size} B`
-              : `${(output.size / 1024).toFixed(1)} KB`}
-          </span>
-        )}
-      </div>
-
-      {input?.content && (
-        <div className="border-b border-border bg-muted/20 px-4 py-3">
-          <pre className="max-h-32 overflow-auto font-mono text-xs leading-relaxed text-muted-foreground">
-            {input.content.split("\n").slice(0, 8).join("\n")}
-            {input.content.split("\n").length > 8 && (
-              <span className="text-muted-foreground/60">{"\n"}...</span>
-            )}
-          </pre>
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 bg-muted/10 px-4 py-2.5">
-        <Button size="sm" className="h-7 gap-1.5 text-xs" asChild>
-          <a href={output?.downloadUrl} target="_blank" rel="noopener noreferrer">
-            <DownloadIcon className="size-3" />
-            Download
-          </a>
-        </Button>
-      </div>
+    <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
+      <span className="text-base">{icon}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-medium">{filename}</span>
+      <Button size="sm" className="h-6 gap-1 text-xs" asChild>
+        <a href={output?.downloadUrl} target="_blank" rel="noopener noreferrer">
+          <DownloadIcon className="size-3" />
+          Download
+        </a>
+      </Button>
     </div>
   );
 }
