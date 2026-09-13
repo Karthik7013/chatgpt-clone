@@ -147,7 +147,7 @@ const webSearchTool = tool({
 });
 
 const generateFileTool = tool({
-  description: "Generate a file with content and upload it to Internet Archive. Use when the user asks to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.",
+  description: "Generate a file with content. Use when the user asks to create, generate, or write any file (code, config, document, script, etc). Always generate complete, working files with proper formatting.",
   inputSchema: asSchema(z.object({
     filename: z.string().describe("Filename with extension (e.g. 'sort.py', 'config.json', 'README.md')"),
     content: z.string().describe("The complete file content to write"),
