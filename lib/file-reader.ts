@@ -1,17 +1,28 @@
 const MAX_CONTENT_BYTES = 50 * 1024; // 50 KB
 
-const TEXT_EXTENSIONS = new Set([
-  ".txt", ".csv", ".json", ".md", ".ts", ".tsx", ".js", ".jsx",
-  ".xml", ".html", ".css", ".py", ".java", ".c", ".cpp",
-  ".rb", ".go", ".rs", ".sql", ".yaml", ".yml", ".toml",
-  ".ini", ".cfg", ".log", ".sh", ".bash", ".env", ".gitignore",
+const TEXT_MIME_TYPES = new Set([
+  "text/",
+  "application/json",
+  "application/xml",
+  "application/javascript",
+  "application/x-javascript",
+  "application/typescript",
+  "application/x-yaml",
+  "application/yaml",
+  "application/x-tex",
+  "application/x-latex",
+  "application/x-sh",
+  "application/x-shellscript",
+  "application/sql",
+  "application/toml",
+  "application/csv",
 ]);
 
-export function isTextReadable(filename: string): boolean {
-  const idx = filename.lastIndexOf(".");
-  if (idx < 0) return false;
-  const ext = filename.slice(idx).toLowerCase();
-  return TEXT_EXTENSIONS.has(ext);
+export function isTextReadable(mediaType?: string): boolean {
+  if (!mediaType) return false;
+  const lower = mediaType.toLowerCase();
+  if (lower.startsWith("text/")) return true;
+  return TEXT_MIME_TYPES.has(lower);
 }
 
 export async function fetchTextContent(url: string): Promise<string> {
@@ -40,7 +51,7 @@ export async function fetchAllFileContents(
 ): Promise<string[]> {
   return Promise.all(
     files
-      .filter((f) => f.filename && f.url && isTextReadable(f.filename))
+      .filter((f) => f.url && isTextReadable(f.mediaType))
       .map(async (f) => {
         try {
           const content = await fetchTextContent(f.url!);
