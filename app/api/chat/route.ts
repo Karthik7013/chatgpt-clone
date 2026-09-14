@@ -210,9 +210,9 @@ const generateFilesTool = tool({
       for (const f of files) {
         zip.file(f.filename, f.content);
       }
-      const buffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+      const buffer = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
 
-      const blob = new Blob([buffer], { type: "application/zip" });
+      const blob = new Blob([new Uint8Array(buffer).buffer as ArrayBuffer], { type: "application/zip" });
       const file = new File([blob], "output.zip", { type: "application/zip" });
 
       const response = await fetch(WORKER_URL, {
