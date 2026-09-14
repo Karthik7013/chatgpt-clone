@@ -7,7 +7,12 @@ type ToolState = "input-streaming" | "input-available" | "output-available" | "o
 
 interface FileCardProps {
   state: ToolState;
-  input?: { filename: string; content: string; description?: string };
+  input?: {
+    filename?: string;
+    content?: string;
+    description?: string;
+    files?: Array<{ filename: string; content: string }>;
+  };
   output?: {
     filename: string;
     description: string;
@@ -37,12 +42,15 @@ export function FileCard({ state, input, output, errorText }: FileCardProps) {
   }
 
   if (state !== "output-available") {
+    const loadingLabel = input?.files
+      ? `Generating ${input.files.length} files...`
+      : `Generating ${input?.filename || "file"}...`;
     return (
       <div className="overflow-hidden rounded-xl border border-border bg-muted/30">
         <div className="flex items-center gap-2 px-4 py-3">
           <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
-            Generating {input?.filename || "file"}...
+            {loadingLabel}
           </span>
         </div>
       </div>

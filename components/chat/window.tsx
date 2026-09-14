@@ -561,6 +561,17 @@ function MessageBubble({
                   />
                 );
               }
+              if (toolName === "generate-files") {
+                return (
+                  <FileCard
+                    key={index}
+                    state={toolPart.state}
+                    input={toolPart.input as { filename?: string; files?: Array<{ filename: string; content: string }>; description?: string } | undefined}
+                    output={toolPart.output as { filename: string; description: string; downloadUrl: string; size: number } | undefined}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
               if (toolName === "qr-code") {
                 return (
                   <QrCard

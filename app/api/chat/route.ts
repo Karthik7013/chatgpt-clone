@@ -12,6 +12,7 @@ import {
   tool,
   type UIMessage,
 } from "ai";
+import JSZip from "jszip";
 
 // Allow long-running streaming responses (tool calls + reasoning can take a while).
 export const maxDuration = 60;
@@ -174,8 +175,64 @@ const generateFileTool = tool({
       return {
         filename: data.fileName,
         description: description || `Generated ${filename}`,
-        downloadUrl: data.instantTmpUrl || data.instantDownloadUrl,
+        downloadUrl: data.instantDownloadUrl || data.instantTmpUrl,
         size: content.length,
+      };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "File generation failed");
+    }
+  },
+});
+
+const generateFilesTool = tool({
+  description: "Generate multiple files and return them as a zip. Use when the user asks to create a group of files, a project structure, or multiple related files at once.",
+  inputSchema: asSchema(z.object({
+    files: z.array(z.object({
+      filename: z.string().describe("File path with extension (e.g. 'src/index.ts', 'README.md')"),
+      content: z.string().describe("The complete file content"),
+    })).describe("Array of files to generate"),
+    description: z.string().optional().describe("Brief one-line description of the generated files"),
+  })),
+  async execute({ files, description }) {
+    if (files.length === 0) throw new Error("At least one file is required");
+    if (files.length > 20) throw new Error("Maximum 20 files allowed");
+
+    let totalSize = 0;
+    for (const f of files) {
+      if (!f.filename) throw new Error("Each file must have a filename");
+      if (f.content.length > 50 * 1024) throw new Error(`${f.filename} exceeds 50KB limit`);
+      totalSize += f.content.length;
+    }
+    if (totalSize > 500 * 1024) throw new Error("Total content exceeds 500KB limit");
+
+    try {
+      const zip = new JSZip();
+      for (const f of files) {
+        zip.file(f.filename, f.content);
+      }
+      const buffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+
+      const blob = new Blob([buffer], { type: "application/zip" });
+      const file = new File([blob], "output.zip", { type: "application/zip" });
+
+      const response = await fetch(WORKER_URL, {
+        method: "PUT",
+        headers: {
+          "X-File-Name": "output.zip",
+          "X-Media-Type": "texts",
+          "Content-Type": "application/zip",
+        },
+        body: file,
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Upload failed");
+
+      return {
+        filename: data.fileName,
+        description: description || `Generated ${files.length} files`,
+        downloadUrl: data.instantDownloadUrl || data.instantTmpUrl,
+        size: buffer.length,
       };
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : "File generation failed");
@@ -275,6 +332,7 @@ export async function POST(req: Request) {
         tools: {
           weather: weatherTool,
           "generate-file": generateFileTool,
+          "generate-files": generateFilesTool,
           "qr-code": qrCodeTool,
           "get-time": getTimeTool,
           ...(webSearchEnabled !== false ? { "web-search": webSearchTool } : {}),
