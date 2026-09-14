@@ -159,15 +159,23 @@ const generateFileTool = tool({
       const blob = new Blob([content], { type: "text/plain" });
       const file = new File([blob], filename, { type: "text/plain" });
       
-      const response = await fetch(WORKER_URL, {
-        method: "PUT",
-        headers: {
-          "X-File-Name": filename,
-          "X-Media-Type": "texts",
-          "Content-Type": "text/plain",
-        },
-        body: file,
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30_000);
+      let response: Response;
+      try {
+        response = await fetch(WORKER_URL, {
+          method: "PUT",
+          headers: {
+            "X-File-Name": filename,
+            "X-Media-Type": "texts",
+            "Content-Type": "text/plain",
+          },
+          body: file,
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
       
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "Upload failed");
@@ -215,15 +223,23 @@ const generateFilesTool = tool({
       const blob = new Blob([new Uint8Array(buffer).buffer as ArrayBuffer], { type: "application/zip" });
       const file = new File([blob], "output.zip", { type: "application/zip" });
 
-      const response = await fetch(WORKER_URL, {
-        method: "PUT",
-        headers: {
-          "X-File-Name": "output.zip",
-          "X-Media-Type": "texts",
-          "Content-Type": "application/zip",
-        },
-        body: file,
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30_000);
+      let response: Response;
+      try {
+        response = await fetch(WORKER_URL, {
+          method: "PUT",
+          headers: {
+            "X-File-Name": "output.zip",
+            "X-Media-Type": "texts",
+            "Content-Type": "application/zip",
+          },
+          body: file,
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
 
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "Upload failed");
