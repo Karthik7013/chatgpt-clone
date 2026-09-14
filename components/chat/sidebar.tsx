@@ -196,42 +196,46 @@ export function ChatSidebar({
         )}
       </SidebarHeader>
 
-      <SidebarContent>
-        <Button
-          className="mb-1 w-full shrink-0 justify-start gap-2.5 rounded-xl bg-primary px-3 py-2.5 font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
-          onClick={handleNewChat}
-        >
-          <PlusIcon className="size-4 shrink-0" />
-          <span className="truncate">New chat</span>
-        </Button>
-        <SidebarMenu>
-          {chats.length === 0 ? (
-            <p className="px-2 py-4 text-xs text-muted-foreground">
-              No conversations yet.
-            </p>
-          ) : (
-            chats.map((chat) => (
-              <ChatListItem
-                key={chat.id}
-                chat={chat}
-                active={chat.id === activeChatId}
-                onSelect={() => handleSelect(chat.id)}
-                onRename={(title) => onRename(chat.id, title)}
-                onDelete={() => onDelete(chat.id)}
-              />
-            ))
-          )}
-        </SidebarMenu>
-      </SidebarContent>
+      {open && (
+        <SidebarContent>
+          <Button
+            className="mb-1 w-full shrink-0 justify-start gap-2.5 rounded-xl bg-primary px-3 py-2.5 font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+            onClick={handleNewChat}
+          >
+            <PlusIcon className="size-4 shrink-0" />
+            <span className="truncate">New chat</span>
+          </Button>
+          <SidebarMenu>
+            {chats.length === 0 ? (
+              <p className="px-2 py-4 text-xs text-muted-foreground">
+                No conversations yet.
+              </p>
+            ) : (
+              chats.map((chat) => (
+                <ChatListItem
+                  key={chat.id}
+                  chat={chat}
+                  active={chat.id === activeChatId}
+                  onSelect={() => handleSelect(chat.id)}
+                  onRename={(title) => onRename(chat.id, title)}
+                  onDelete={() => onDelete(chat.id)}
+                />
+              ))
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+      )}
 
-      <SidebarFooter>
-        <p
-          title="Next.js · shadcn/ui · AI Elements · Vercel AI SDK"
-          className="truncate text-xs text-muted-foreground"
-        >
-          Next.js · shadcn/ui · AI Elements · Vercel AI SDK
-        </p>
-      </SidebarFooter>
+      {open && (
+        <SidebarFooter>
+          <p
+            title="Next.js · shadcn/ui · AI Elements · Vercel AI SDK"
+            className="truncate text-xs text-muted-foreground"
+          >
+            Next.js · shadcn/ui · AI Elements · Vercel AI SDK
+          </p>
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }

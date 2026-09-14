@@ -162,7 +162,6 @@ export function SidebarHeader({ className, ...props }: React.HTMLAttributes<HTML
 export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      data-sidebar="content"
       className={cn("flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 py-1", className)}
       {...props}
     />
@@ -170,7 +169,7 @@ export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTM
 }
 
 export function SidebarFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div data-sidebar="footer" className={cn("mt-auto border-t border-sidebar-border p-3", className)} {...props} />;
+  return <div className={cn("mt-auto border-t border-sidebar-border p-3", className)} {...props} />;
 }
 
 export function SidebarMenu({ className, ...props }: React.HTMLAttributes<HTMLUListElement>) {
