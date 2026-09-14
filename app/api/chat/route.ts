@@ -158,7 +158,7 @@ const generateFileTool = tool({
     try {
       const blob = new Blob([content], { type: "text/plain" });
       const file = new File([blob], filename, { type: "text/plain" });
-      
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15_000);
       let response: Response;
@@ -176,10 +176,10 @@ const generateFileTool = tool({
       } finally {
         clearTimeout(timeout);
       }
-      
+
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "Upload failed");
-      
+
       return {
         filename: data.fileName,
         description: description || `Generated ${filename}`,
@@ -340,7 +340,7 @@ export async function POST(req: Request) {
     } catch (err) {
       console.error("Failed to load MCP tools:", err);
       mcpTools = {};
-      close = async () => {};
+      close = async () => { };
     }
     closeAll = close;
 
@@ -364,7 +364,7 @@ export async function POST(req: Request) {
           ...(webSearchEnabled !== false ? { "web-search": webSearchTool } : {}),
           ...mcpTools,
         },
-        stopWhen: stepCountIs(3),
+        stopWhen: stepCountIs(10),
         onError: ({ error }) => {
           console.error("streamText error:", error);
           const msg = String(error);
