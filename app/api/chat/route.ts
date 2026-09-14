@@ -192,16 +192,24 @@ const generateFileTool = tool({
   },
 });
 
+function deriveZipName(files: { filename: string }[]): string {
+  const first = files[0]?.filename || "";
+  const parts = first.split("/");
+  if (parts.length > 1) return parts[0];
+  return "files";
+}
+
 const generateFilesTool = tool({
-  description: "Generate multiple files and return them as a zip. Use when the user asks to create a group of files, a project structure, or multiple related files at once.",
+  description: "Generate multiple files and return them as a zip. Use when the user asks to create a group of files, a project structure, or multiple related files at once. Always provide a meaningful zipName based on the project or content.",
   inputSchema: asSchema(z.object({
     files: z.array(z.object({
       filename: z.string().describe("File path with extension (e.g. 'src/index.ts', 'README.md')"),
       content: z.string().describe("The complete file content"),
     })).describe("Array of files to generate"),
+    zipName: z.string().optional().describe("Name for the zip file without extension (e.g. 'my-project'). Derive from the content or purpose"),
     description: z.string().optional().describe("Brief one-line description of the generated files"),
   })),
-  async execute({ files, description }) {
+  async execute({ files, zipName, description }) {
     if (files.length === 0) throw new Error("At least one file is required");
     if (files.length > 20) throw new Error("Maximum 20 files allowed");
 
@@ -213,6 +221,8 @@ const generateFilesTool = tool({
     }
     if (totalSize > 500 * 1024) throw new Error("Total content exceeds 500KB limit");
 
+    const name = zipName?.trim() || deriveZipName(files);
+
     try {
       const zip = new JSZip();
       for (const f of files) {
@@ -221,7 +231,7 @@ const generateFilesTool = tool({
       const buffer = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
 
       const blob = new Blob([new Uint8Array(buffer).buffer as ArrayBuffer], { type: "application/zip" });
-      const file = new File([blob], "output.zip", { type: "application/zip" });
+      const file = new File([blob], `${name}.zip`, { type: "application/zip" });
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -230,7 +240,7 @@ const generateFilesTool = tool({
         response = await fetch(WORKER_URL, {
           method: "PUT",
           headers: {
-            "X-File-Name": "output.zip",
+            "X-File-Name": `${name}.zip`,
             "X-Media-Type": "texts",
             "Content-Type": "application/zip",
           },
