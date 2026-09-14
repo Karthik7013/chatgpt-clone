@@ -160,7 +160,7 @@ const generateFileTool = tool({
       const file = new File([blob], filename, { type: "text/plain" });
       
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000);
+      const timeout = setTimeout(() => controller.abort(), 30_000);
       let response: Response;
       try {
         response = await fetch(WORKER_URL, {
@@ -228,13 +228,13 @@ const generateFilesTool = tool({
       for (const f of files) {
         zip.file(f.filename, f.content);
       }
-      const buffer = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+      const buffer = await zip.generateAsync({ type: "uint8array", compression: "STORE" });
 
       const blob = new Blob([new Uint8Array(buffer).buffer as ArrayBuffer], { type: "application/zip" });
       const file = new File([blob], `${name}.zip`, { type: "application/zip" });
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000);
+      const timeout = setTimeout(() => controller.abort(), 30_000);
       let response: Response;
       try {
         response = await fetch(WORKER_URL, {
