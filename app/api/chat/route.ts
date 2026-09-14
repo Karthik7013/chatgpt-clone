@@ -160,7 +160,7 @@ const generateFileTool = tool({
       const file = new File([blob], filename, { type: "text/plain" });
       
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30_000);
+      const timeout = setTimeout(() => controller.abort(), 15_000);
       let response: Response;
       try {
         response = await fetch(WORKER_URL, {
@@ -234,7 +234,7 @@ const generateFilesTool = tool({
       const file = new File([blob], `${name}.zip`, { type: "application/zip" });
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30_000);
+      const timeout = setTimeout(() => controller.abort(), 15_000);
       let response: Response;
       try {
         response = await fetch(WORKER_URL, {
@@ -364,7 +364,7 @@ export async function POST(req: Request) {
           ...(webSearchEnabled !== false ? { "web-search": webSearchTool } : {}),
           ...mcpTools,
         },
-        stopWhen: stepCountIs(5),
+        stopWhen: stepCountIs(3),
         onError: ({ error }) => {
           console.error("streamText error:", error);
           const msg = String(error);

@@ -52,7 +52,7 @@ export async function uploadFileToWorker(file: File): Promise<UploadResult> {
       "Content-Type": file.type || "application/octet-stream",
     },
     body: file,
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(15_000),
   });
 
   const data = await response.json();
