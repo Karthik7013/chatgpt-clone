@@ -126,8 +126,8 @@ export function ChatApp() {
         onDelete={handleDelete}
       />
 
-      <SidebarInset>
-        <div className="flex h-full flex-1 flex-row overflow-hidden">
+      <SidebarInset className="md:p-3 bg-sidebar">
+        <div className="flex h-full flex-1 flex-row overflow-hidden bg-background md:rounded-md">
           {/* Chat Column */}
           <div className="flex flex-1 flex-col overflow-hidden">
             <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background px-4">

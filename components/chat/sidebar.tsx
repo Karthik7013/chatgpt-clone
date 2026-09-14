@@ -161,7 +161,7 @@ export function ChatSidebar({
   }
 
   return (
-    <Sidebar>
+    <Sidebar className="border-0">
       <SidebarHeader>
         {open ? (
           <div className="flex items-center gap-2 px-1 py-1">
