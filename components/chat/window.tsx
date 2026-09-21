@@ -3,15 +3,11 @@
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage, FileUIPart } from "ai";
-import { nanoid } from "nanoid";
-import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, FileText, Globe, RotateCcw } from "lucide-react";
+import { Check, CircleAlert, Copy, FileText, Globe, RotateCcw } from "lucide-react";
 
 import {
   loadMessages,
-  loadVersions,
   saveMessages,
-  saveVersions,
-  type VersionState,
 } from "@/lib/chat-store";
 import { uploadFileToWorker, type UploadResult } from "@/lib/file-upload";
 import {
@@ -22,6 +18,7 @@ import {
 import { EmptyHome } from "@/components/ai-elements/empty-home";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
+import { CitedResponse, type Citation } from "@/components/ai-elements/cited-response";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput, type ToolState } from "@/components/ai-elements/tool";
 import { Sources } from "@/components/ai-elements/sources";
@@ -47,6 +44,7 @@ import { TimeCard } from "@/components/tool-cards/time-card";
 import { WeatherCard } from "@/components/tool-cards/weather-card";
 import { FileCard } from "@/components/tool-cards/file-card";
 import { QrCard } from "@/components/tool-cards/qr-card";
+import { WebFetchCard } from "@/components/tool-cards/web-fetch-card";
 import { DefaultChatTransport } from "ai";
 
 export function ChatWindow({
@@ -60,13 +58,10 @@ export function ChatWindow({
   const [model, setModel] = React.useState("kilo:kilo-auto/free");
   const [webSearchEnabled, setWebSearchEnabled] = React.useState(true);
   const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
-  const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
+  const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string; tmpUrl: string })[]>([]);
   const [uploading, setUploading] = React.useState(false);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
   const hasNotifiedFirstMessage = React.useRef(initialMessages.length > 0);
-  const [versionState, setVersionState] = React.useState<VersionState>(() => loadVersions(chatId));
-   // User message id currently awaiting a regenerated response.
-  const pendingRegenRef = React.useRef<string | null>(null);
 
   function getErrorMessage(err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
@@ -88,47 +83,12 @@ export function ChatWindow({
     return msg || "Something went wrong. Try again.";
   }
 
-  const handleFinish = React.useCallback(
-    ({ message, messages: finishedMessages }: { message: UIMessage; messages: UIMessage[] }) => {
-      const target = pendingRegenRef.current;
-      pendingRegenRef.current = null;
-      const lastUser = [...finishedMessages].reverse().find((m) => m.role === "user");
-
-      if (target && lastUser?.id === target) {
-        // Regenerated response: append as a new version of the same prompt.
-        setVersionState((prev) => {
-          const list = prev.versions[target] ?? [];
-          if (list.some((m) => m.id === message.id)) return prev;
-          const next = [...list, message];
-          return {
-            versions: { ...prev.versions, [target]: next },
-            active: { ...prev.active, [target]: next.length - 1 },
-          };
-        });
-        return;
-      }
-
-      // Fresh exchange: track the first response for this prompt.
-      if (!lastUser) return;
-      const uid = lastUser.id;
-      setVersionState((prev) => {
-        if (prev.versions[uid]) return prev;
-        return {
-          versions: { ...prev.versions, [uid]: [message] },
-          active: { ...prev.active, [uid]: 0 },
-        };
-      });
-    },
-    [],
-  );
-
   const { messages, sendMessage, setMessages, regenerate, status, error, stop, clearError } = useChat({
     id: chatId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
       body: { model, webSearchEnabled },
     }),
-    onFinish: handleFinish,
   });
 
   React.useEffect(() => {
@@ -143,76 +103,13 @@ export function ChatWindow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, chatId]);
 
-  React.useEffect(() => {
-    saveVersions(chatId, versionState);
-  }, [chatId, versionState]);
-
   function handleRetry() {
-    const target = pendingRegenRef.current ?? lastUserMessageId;
-    if (!target || isBusy) return;
+    if (isBusy) return;
     clearError();
-    if (pendingRegenRef.current) {
-      // A regeneration was in flight — retrigger it directly.
-      void regenerate();
-    } else {
-      // Re-send the last prompt; success is stored as a version.
-      handleRegenerate(target);
-    }
+    void regenerate();
   }
-
-  // Fire the regeneration only after the truncation has committed to state,
-  // so regenerate() reads the truncated history instead of the stale one.
-  React.useEffect(() => {
-    const target = pendingRegenRef.current;
-    if (!target || isBusy) return;
-    const last = messages.at(-1);
-    if (last?.id === target && last.role === "user") {
-      void regenerate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages]);
 
   const isBusy = status === "submitted" || status === "streaming";
-
-  function handleRegenerate(userId: string) {
-    if (isBusy) return;
-    const idx = messages.findIndex((m) => m.id === userId && m.role === "user");
-    if (idx < 0) return;
-    const current = messages[idx + 1];
-    // Stash the visible response as a version before replacing it.
-    setVersionState((prev) => {
-      const list = [...(prev.versions[userId] ?? [])];
-      if (current?.role === "assistant" && !list.some((m) => m.id === current.id)) {
-        list.push(current);
-      }
-      return {
-        versions: { ...prev.versions, [userId]: list },
-        active: { ...prev.active, [userId]: Math.max(list.length - 1, 0) },
-      };
-    });
-    // Fork the thread: drop everything after this prompt, then regenerate.
-    setMessages(messages.slice(0, idx + 1));
-    pendingRegenRef.current = userId;
-  }
-
-  function showVersion(userId: string, dir: 1 | -1) {
-    if (isBusy) return;
-    const list = versionState.versions[userId];
-    if (!list || list.length < 2) return;
-    const cur = Math.min(versionState.active[userId] ?? 0, list.length - 1);
-    const next = cur + dir;
-    if (next < 0 || next >= list.length) return;
-    const idx = messages.findIndex((m) => m.id === userId && m.role === "user");
-    const slot = idx >= 0 ? messages[idx + 1] : undefined;
-    if (idx < 0 || slot?.role !== "assistant") return;
-    const copy = [...messages];
-    copy[idx + 1] = list[next];
-    setMessages(copy);
-    setVersionState((prev) => ({
-      ...prev,
-      active: { ...prev.active, [userId]: next },
-    }));
-  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -242,8 +139,9 @@ export function ChatWindow({
           id: result.itemId,
           filename: result.fileName,
           mediaType: file.type || "application/octet-stream",
-          url: result.instantTmpUrl || result.instantDownloadUrl,
-        };
+          url: result.instantDownloadUrl,
+          tmpUrl: result.instantTmpUrl || result.instantDownloadUrl,
+        } satisfies FileUIPart & { id: string; tmpUrl: string };
       });
 
       const uploadedFiles = await Promise.all(uploadPromises);
@@ -280,28 +178,11 @@ export function ChatWindow({
             <EmptyHome />
           ) : (
             messages.map((message, i) => {
-              const prev = i > 0 ? messages[i - 1] : undefined;
-              const promptId =
-                message.role === "assistant" && prev?.role === "user" ? prev.id : undefined;
-              const list = promptId ? versionState.versions[promptId] : undefined;
-              const activeIdx = promptId ? (versionState.active[promptId] ?? 0) : 0;
               return (
                 <MessageBubble
                   key={message.id}
                   message={message}
                   isStreamingTarget={isBusy && message.id === lastMessageId}
-                  versionControls={
-                    promptId
-                      ? {
-                        index: Math.min(activeIdx, Math.max((list?.length ?? 1) - 1, 0)),
-                        total: list?.length ?? 1,
-                        disabled: isBusy,
-                        onPrev: () => showVersion(promptId, -1),
-                        onNext: () => showVersion(promptId, 1),
-                        onRegenerate: () => handleRegenerate(promptId),
-                      }
-                      : undefined
-                  }
                 />
               );
             })
@@ -386,18 +267,9 @@ export function ChatWindow({
 function MessageBubble({
   message,
   isStreamingTarget,
-  versionControls,
 }: {
   message: UIMessage;
   isStreamingTarget: boolean;
-  versionControls?: {
-    index: number;
-    total: number;
-    disabled: boolean;
-    onPrev: () => void;
-    onNext: () => void;
-    onRegenerate: () => void;
-  };
 }) {
   const sources = message.parts
     .filter((p): p is Extract<UIMessage["parts"][number], { type: "source-url" }> => p.type === "source-url")
@@ -406,6 +278,18 @@ function MessageBubble({
   const sourceDocs = message.parts
     .filter((p): p is Extract<UIMessage["parts"][number], { type: "source-document" }> => p.type === "source-document")
     .map((p) => ({ title: p.title, filename: p.filename, mediaType: p.mediaType }));
+
+  // Extract web-search results for citation mapping
+  const searchCitations: Citation[] = message.parts
+    .filter((p): p is Extract<UIMessage["parts"][number], { type: `tool-web-search` }> =>
+      (p.type === "tool-web-search" || p.type === "dynamic-tool") &&
+      (p as unknown as { toolName?: string }).toolName === "web-search" &&
+      (p as unknown as { state: string }).state === "output-available"
+    )
+    .flatMap((p) => {
+      const output = (p as unknown as { output?: { results?: Array<{ index: number; url: string; title: string; domain: string }> } }).output;
+      return output?.results ?? [];
+    });
 
   const lastPartIndex = message.parts.length - 1;
   const [copied, setCopied] = React.useState(false);
@@ -469,6 +353,8 @@ function MessageBubble({
                 <p key={index} className="whitespace-pre-wrap">
                   {part.text}
                 </p>
+              ) : searchCitations.length > 0 ? (
+                <CitedResponse key={index} citations={searchCitations}>{part.text}</CitedResponse>
               ) : (
                 <Response key={index}>{part.text}</Response>
               );
@@ -583,6 +469,17 @@ function MessageBubble({
                   />
                 );
               }
+              if (toolName === "web-fetch") {
+                return (
+                  <WebFetchCard
+                    key={index}
+                    state={toolPart.state}
+                    input={toolPart.input as { url: string; format?: string } | undefined}
+                    output={toolPart.output as { url: string; content: string; type: string } | undefined}
+                    errorText={toolPart.errorText}
+                  />
+                );
+              }
               // Force the card open while the tool is executing so the
               // Preparing/Running loading state is visible. Falls back to
               // uncontrolled (user toggle + auto-open on error) once done.
@@ -621,47 +518,9 @@ function MessageBubble({
               ))}
             </div>
           ) : null}
-          {message.role === "assistant" && versionControls ? (
+          {message.role === "assistant" ? (
             <div className="flex items-center gap-1 pt-1 text-muted-foreground">
               {copyButton}
-              <button
-                type="button"
-                onClick={versionControls.onRegenerate}
-                disabled={versionControls.disabled}
-                title="Regenerate response"
-                aria-label="Regenerate response"
-                className="rounded-md p-1.5 transition-colors hover:bg-surface-2 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-              >
-                <RotateCcw className="size-3.5" />
-              </button>
-              {versionControls.total > 1 ? (
-                <span className="flex items-center gap-0.5 text-xs">
-                  <button
-                    type="button"
-                    onClick={versionControls.onPrev}
-                    disabled={versionControls.disabled || versionControls.index === 0}
-                    aria-label="Previous response"
-                    className="rounded-md p-1.5 transition-colors hover:bg-surface-2 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    <ChevronLeft className="size-3.5" />
-                  </button>
-                  <span className="min-w-8 text-center tabular-nums">
-                    {versionControls.index + 1} / {versionControls.total}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={versionControls.onNext}
-                    disabled={
-                      versionControls.disabled ||
-                      versionControls.index === versionControls.total - 1
-                    }
-                    aria-label="Next response"
-                    className="rounded-md p-1.5 transition-colors hover:bg-surface-2 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    <ChevronRight className="size-3.5" />
-                  </button>
-                </span>
-              ) : null}
             </div>
           ) : null}
         </div>

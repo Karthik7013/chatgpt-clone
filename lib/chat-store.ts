@@ -66,7 +66,6 @@ export function deleteChat(id: string) {
   writeIndex(readIndex().filter((c) => c.id !== id));
   if (isBrowser()) {
     window.localStorage.removeItem(messagesKey(id));
-    window.localStorage.removeItem(versionsKey(id));
   }
 }
 
@@ -94,35 +93,6 @@ export function saveMessages(id: string, messages: UIMessage[]) {
     window.localStorage.setItem(messagesKey(id), JSON.stringify(messages));
   } catch (err) {
     console.error("Failed to save messages:", err);
-  }
-}
-
-/** Multiple assistant responses per user prompt, keyed by the user message id. */
-export type VersionState = {
-  versions: Record<string, UIMessage[]>;
-  active: Record<string, number>;
-};
-
-const versionsKey = (id: string) => `chatgpt-clone:versions:${id}`;
-
-export function loadVersions(id: string): VersionState {
-  if (!isBrowser()) return { versions: {}, active: {} };
-  try {
-    const raw = window.localStorage.getItem(versionsKey(id));
-    if (!raw) return { versions: {}, active: {} };
-    const parsed = JSON.parse(raw) as VersionState;
-    return { versions: parsed.versions ?? {}, active: parsed.active ?? {} };
-  } catch {
-    return { versions: {}, active: {} };
-  }
-}
-
-export function saveVersions(id: string, state: VersionState) {
-  if (!isBrowser()) return;
-  try {
-    window.localStorage.setItem(versionsKey(id), JSON.stringify(state));
-  } catch (err) {
-    console.error("Failed to save versions:", err);
   }
 }
 

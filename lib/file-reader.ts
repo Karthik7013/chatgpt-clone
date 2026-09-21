@@ -49,14 +49,24 @@ export interface FileAttachment {
 export async function fetchAllFileContents(
   files: FileAttachment[],
 ): Promise<string[]> {
+  console.log("🔍 [file-reader] Processing files:", files.map(f => ({
+    filename: f.filename,
+    url: f.url,
+    mediaType: f.mediaType,
+    isTextReadable: isTextReadable(f.mediaType),
+  })));
+
   return Promise.all(
     files
       .filter((f) => f.url && isTextReadable(f.mediaType))
       .map(async (f) => {
         try {
+          console.log(`📥 [file-reader] Fetching: ${f.filename} from ${f.url}`);
           const content = await fetchTextContent(f.url!);
+          console.log(`✅ [file-reader] Read ${content.length} chars from ${f.filename}`);
           return `--- File: ${f.filename} ---\n${content}\n--- End of file ---`;
-        } catch {
+        } catch (err) {
+          console.error(`❌ [file-reader] Failed to read ${f.filename}:`, err);
           return `--- File: ${f.filename} ---\n[Failed to read file content]\n--- End of file ---`;
         }
       }),

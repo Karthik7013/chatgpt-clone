@@ -29,7 +29,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-export function ChatApp() {
+export function ChatApp({ initialChatId }: { initialChatId?: string } = {}) {
   const [chats, setChats] = React.useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = React.useState<string | null>(null);
   const [ready, setReady] = React.useState(false);
@@ -44,6 +44,15 @@ export function ChatApp() {
 
   React.useEffect(() => {
     const existing = listChats();
+    if (initialChatId) {
+      const target = existing.find((c) => c.id === initialChatId);
+      if (target) {
+        setChats(existing);
+        setActiveChatId(target.id);
+        setReady(true);
+        return;
+      }
+    }
     if (existing.length > 0) {
       setChats(existing);
       setActiveChatId(existing[0].id);
