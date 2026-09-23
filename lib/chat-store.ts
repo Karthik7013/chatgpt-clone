@@ -1,5 +1,3 @@
-"use client";
-
 import type { UIMessage } from "ai";
 
 export type ChatSummary = {
@@ -9,91 +7,67 @@ export type ChatSummary = {
   updatedAt: number;
 };
 
-const INDEX_KEY = "chatgpt-clone:chats";
-const messagesKey = (id: string) => `chatgpt-clone:messages:${id}`;
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
-function isBrowser() {
-  return typeof window !== "undefined";
-}
-
-function readIndex(): ChatSummary[] {
-  if (!isBrowser()) return [];
-  try {
-    const raw = window.localStorage.getItem(INDEX_KEY);
-    return raw ? (JSON.parse(raw) as ChatSummary[]) : [];
-  } catch {
-    return [];
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, init);
+  if (!res.ok) {
+    let message = `Request failed (${res.status})`;
+    try {
+      const data = (await res.json()) as { error?: string };
+      if (data.error) message = data.error;
+    } catch {
+      // non-JSON error body; keep the status-based message
+    }
+    throw new Error(message);
   }
+  return res.json() as Promise<T>;
 }
 
-function writeIndex(chats: ChatSummary[]) {
-  if (!isBrowser()) return;
-  try {
-    window.localStorage.setItem(INDEX_KEY, JSON.stringify(chats));
-  } catch (err) {
-    console.error("Failed to write chat index:", err);
-  }
+export async function listChats(): Promise<ChatSummary[]> {
+  return request<ChatSummary[]>("/api/chats");
 }
 
-export function listChats(): ChatSummary[] {
-  return readIndex().sort((a, b) => b.updatedAt - a.updatedAt);
+export async function createChat(): Promise<ChatSummary> {
+  return request<ChatSummary>("/api/chats", {
+    method: "POST",
+    headers: JSON_HEADERS,
+  });
 }
 
-export function createChat(): ChatSummary {
-  const now = Date.now();
-  const chat: ChatSummary = {
-    id: crypto.randomUUID(),
-    title: "New chat",
-    createdAt: now,
-    updatedAt: now,
-  };
-  const chats = readIndex();
-  chats.push(chat);
-  writeIndex(chats);
-  return chat;
+export async function touchChat(id: string, title?: string): Promise<void> {
+  await request<unknown>(`/api/chats/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(title ? { title } : {}),
+  });
 }
 
-export function touchChat(id: string, title?: string) {
-  const chats = readIndex();
-  const chat = chats.find((c) => c.id === id);
-  if (!chat) return;
-  chat.updatedAt = Date.now();
-  if (title) chat.title = title;
-  writeIndex(chats);
+export async function renameChat(id: string, title: string): Promise<void> {
+  await touchChat(id, title);
 }
 
-export function deleteChat(id: string) {
-  writeIndex(readIndex().filter((c) => c.id !== id));
-  if (isBrowser()) {
-    window.localStorage.removeItem(messagesKey(id));
-  }
+export async function deleteChat(id: string): Promise<void> {
+  await request<unknown>(`/api/chats/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }
 
-export function renameChat(id: string, title: string) {
-  const chats = readIndex();
-  const chat = chats.find((c) => c.id === id);
-  if (!chat) return;
-  chat.title = title;
-  writeIndex(chats);
+export async function loadMessages(id: string): Promise<UIMessage[]> {
+  return request<UIMessage[]>(
+    `/api/chats/${encodeURIComponent(id)}/messages`,
+  );
 }
 
-export function loadMessages(id: string): UIMessage[] {
-  if (!isBrowser()) return [];
-  try {
-    const raw = window.localStorage.getItem(messagesKey(id));
-    return raw ? (JSON.parse(raw) as UIMessage[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveMessages(id: string, messages: UIMessage[]) {
-  if (!isBrowser()) return;
-  try {
-    window.localStorage.setItem(messagesKey(id), JSON.stringify(messages));
-  } catch (err) {
-    console.error("Failed to save messages:", err);
-  }
+export async function saveMessages(
+  id: string,
+  messages: UIMessage[],
+): Promise<void> {
+  await request<unknown>(`/api/chats/${encodeURIComponent(id)}/messages`, {
+    method: "PUT",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(messages),
+  });
 }
 
 /** Derives a short chat title from the first user message's text parts. */

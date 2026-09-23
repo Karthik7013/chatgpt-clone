@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage, FileUIPart } from "ai";
-import { Check, CircleAlert, Copy, FileText, Globe, RotateCcw } from "lucide-react";
+import { Check, CircleAlert, Copy, FileText, Globe, Loader2, RotateCcw } from "lucide-react";
 
 import {
   loadMessages,
@@ -54,13 +54,58 @@ export function ChatWindow({
   chatId: string;
   onFirstMessage: (message: UIMessage) => void;
 }) {
+  const [seedMessages, setSeedMessages] = React.useState<UIMessage[] | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    loadMessages(chatId)
+      .then((messages) => {
+        if (!cancelled) setSeedMessages(messages);
+      })
+      .catch((err) => {
+        console.error("Failed to load messages:", err);
+        if (!cancelled) setSeedMessages([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [chatId]);
+
+  if (seedMessages === null) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <ChatSession
+      chatId={chatId}
+      initialMessages={seedMessages}
+      onFirstMessage={onFirstMessage}
+    />
+  );
+}
+
+function ChatSession({
+  chatId,
+  initialMessages,
+  onFirstMessage,
+}: {
+  chatId: string;
+  initialMessages: UIMessage[];
+  onFirstMessage: (message: UIMessage) => void;
+}) {
   const [input, setInput] = React.useState("");
   const [model, setModel] = React.useState("kilo:kilo-auto/free");
   const [webSearchEnabled, setWebSearchEnabled] = React.useState(true);
-  const initialMessages = React.useMemo(() => loadMessages(chatId), [chatId]);
   const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string; tmpUrl: string })[]>([]);
   const [uploading, setUploading] = React.useState(false);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const [saveError, setSaveError] = React.useState<string | null>(null);
   const hasNotifiedFirstMessage = React.useRef(initialMessages.length > 0);
 
   function getErrorMessage(err: unknown): string {
@@ -92,7 +137,6 @@ export function ChatWindow({
   });
 
   React.useEffect(() => {
-    saveMessages(chatId, messages);
     if (!hasNotifiedFirstMessage.current) {
       const firstUser = messages.find((m) => m.role === "user");
       if (firstUser) {
@@ -101,6 +145,17 @@ export function ChatWindow({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
+  React.useEffect(() => {
+    if (messages.length === 0) return;
+    const timer = window.setTimeout(() => {
+      void saveMessages(chatId, messages).catch((err) => {
+        console.error("Failed to save messages:", err);
+        setSaveError("Changes could not be saved to the database.");
+      });
+    }, 800);
+    return () => window.clearTimeout(timer);
   }, [messages, chatId]);
 
   function handleRetry() {
@@ -212,12 +267,25 @@ export function ChatWindow({
       </Conversation>
 
       <div className="mx-auto w-full max-w-3xl bg-background px-4 md:px-0 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
-        {uploadError ? (
+        {saveError ? (
+          <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger mt-2">
+            <CircleAlert className="size-3.5 shrink-0" />
+            <span className="flex-1">{saveError}</span>
+            <button
+              type="button"
+              onClick={() => setSaveError(null)}
+              className="rounded hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        ) : null}
+        {uploadError &&
           <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger mt-2">
             <CircleAlert className="size-3.5 shrink-0" />
             <span className="flex-1">{uploadError}</span>
           </div>
-        ) : null}
+        }
         <input
           ref={fileInputRef}
           type="file"
@@ -256,9 +324,6 @@ export function ChatWindow({
             <PromptInputSubmit status={status} disabled={uploading || (!input.trim() && pendingFiles.length === 0)} onStop={stop} />
           </PromptInputToolbar>
         </PromptInput>
-        <p className="text-center text-xs text-muted-foreground my-1">
-          AI-generated. Check important info for accuracy.
-        </p>
       </div>
     </div>
   );
