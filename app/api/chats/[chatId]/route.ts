@@ -13,8 +13,14 @@ export async function PATCH(
   { params }: { params: Promise<{ chatId: string }> },
 ) {
   const { chatId } = await params;
+  let body: unknown;
   try {
-    const parsed = patchSchema.safeParse(await req.json());
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+  try {
+    const parsed = patchSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: "Invalid request body." }, { status: 400 });
     }
