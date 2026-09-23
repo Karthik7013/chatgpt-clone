@@ -57,6 +57,7 @@ export function ChatWindow({
   const [seedMessages, setSeedMessages] = React.useState<UIMessage[] | null>(
     null,
   );
+  const [loadFailed, setLoadFailed] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -66,7 +67,10 @@ export function ChatWindow({
       })
       .catch((err) => {
         console.error("Failed to load messages:", err);
-        if (!cancelled) setSeedMessages([]);
+        if (!cancelled) {
+          setSeedMessages([]);
+          setLoadFailed(true);
+        }
       });
     return () => {
       cancelled = true;
@@ -86,6 +90,7 @@ export function ChatWindow({
       chatId={chatId}
       initialMessages={seedMessages}
       onFirstMessage={onFirstMessage}
+      loadFailed={loadFailed}
     />
   );
 }
@@ -94,10 +99,12 @@ function ChatSession({
   chatId,
   initialMessages,
   onFirstMessage,
+  loadFailed,
 }: {
   chatId: string;
   initialMessages: UIMessage[];
   onFirstMessage: (message: UIMessage) => void;
+  loadFailed: boolean;
 }) {
   const [input, setInput] = React.useState("");
   const [model, setModel] = React.useState("kilo:kilo-auto/free");
@@ -148,7 +155,7 @@ function ChatSession({
   }, [messages]);
 
   React.useEffect(() => {
-    if (messages.length === 0) return;
+    if (messages.length === 0 || loadFailed) return;
     const timer = window.setTimeout(() => {
       void saveMessages(chatId, messages).catch((err) => {
         console.error("Failed to save messages:", err);
@@ -156,7 +163,7 @@ function ChatSession({
       });
     }, 800);
     return () => window.clearTimeout(timer);
-  }, [messages, chatId]);
+  }, [messages, chatId, loadFailed]);
 
   function handleRetry() {
     if (isBusy) return;
