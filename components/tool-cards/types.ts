@@ -13,21 +13,3 @@ export type ToolCardProps = {
   output?: unknown;
   errorText?: string;
 };
-
-/**
- * Tool name as it appears in a message part: `tool-web-fetch`, or
- * `dynamic-tool` when the tool came from a server we had no types for.
- */
-export function partToolName(part: { type: string; toolName?: string }): string {
-  if (part.type === "dynamic-tool") return part.toolName ?? "unknown";
-  return part.type.replace(/^tool-/, "");
-}
-
-/**
- * MCP namespaces its tools as `<server>__<tool>`, so `local__get-time` and
- * `get-time` must render the same card. Strips the server prefix.
- */
-export function baseToolName(name: string): string {
-  const separator = name.lastIndexOf("__");
-  return separator === -1 ? name : name.slice(separator + 2);
-}
