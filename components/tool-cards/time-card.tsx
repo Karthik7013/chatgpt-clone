@@ -9,8 +9,8 @@ import {
   ToolHeader,
   ToolInput,
   ToolOutput,
-  type ToolState,
 } from "@/components/ai-elements/tool";
+import type { ToolCardProps } from "@/components/tool-cards/types";
 
 /** Pulls the first text out of an MCP-shaped tool output. */
 function extractText(output: unknown): string | null {
@@ -39,24 +39,12 @@ function inputTimezone(input: unknown): string {
 }
 
 /**
- * Rich card for namespaced `get-time` MCP tools (e.g. `local__get-time`).
- * Loading skeleton while the tool runs, time display on success, error
- * block on failure. Falls back to the generic Tool renderer when the
+ * Rich card for the `get-time` tool, including its namespaced MCP form
+ * (`local__get-time`). Shows a skeleton while running, the time on success and
+ * an error block on failure. Falls back to the generic renderer when the
  * output has no readable text.
  */
-export function TimeCard({
-  state,
-  input,
-  output,
-  errorText,
-  type,
-}: {
-  state: ToolState;
-  input?: unknown;
-  output?: unknown;
-  errorText?: string;
-  type: string;
-}) {
+export function TimeCard({ name, state, input, output, errorText }: ToolCardProps) {
   const timezone = inputTimezone(input);
 
   if (state === "input-streaming" || state === "input-available") {
@@ -75,7 +63,7 @@ export function TimeCard({
           </div>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Checking the time{timezone ? ` in ${timezone}` : ""}…
+          Checking the time in {timezone}…
         </p>
       </div>
     );
@@ -84,8 +72,7 @@ export function TimeCard({
   if (state === "output-error") {
     return (
       <div className="w-full max-w-full rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-        Couldn&apos;t get the time{errorText ? `: ${errorText}` : "."} Try
-        again.
+        Couldn&apos;t get the time{errorText ? `: ${errorText}` : "."} Try again.
       </div>
     );
   }
@@ -94,7 +81,7 @@ export function TimeCard({
   if (!text) {
     return (
       <Tool defaultOpen={false}>
-        <ToolHeader type={type} state={state} />
+        <ToolHeader type={`tool-${name}`} state={state} />
         <ToolContent>
           <ToolInput input={input} />
           <ToolOutput output={output} errorText={errorText} />

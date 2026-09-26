@@ -39,11 +39,7 @@ import {
   type AttachmentData,
 } from "@/components/ai-elements/attachments";
 import { ModelSelector } from "@/components/model-selector";
-import { TimeCard } from "@/components/tool-cards/time-card";
-import { WeatherCard } from "@/components/tool-cards/weather-card";
-import { FileCard } from "@/components/tool-cards/file-card";
-import { QrCard } from "@/components/tool-cards/qr-card";
-import { WebFetchCard } from "@/components/tool-cards/web-fetch-card";
+import { baseToolName, partToolName, toolCardFor } from "@/components/tool-cards";
 import { DefaultChatTransport } from "ai";
 
 export function ChatWindow({
@@ -454,79 +450,22 @@ function MessageBubble({
                 output?: unknown;
                 errorText?: string;
               };
+              const toolName = partToolName(toolPart);
               const typeLabel =
                 part.type === "dynamic-tool" ? `tool-${toolPart.toolName ?? "unknown"}` : part.type;
-              const toolName =
-                part.type === "dynamic-tool"
-                  ? (toolPart.toolName ?? "unknown")
-                  : typeLabel.replace(/^tool-/, "");
               // Rich cards for known tools (generative UI); every other
-              // tool keeps the generic collapsible renderer below.
-              if (toolName === "weather") {
+              // tool keeps the generic collapsible renderer below. MCP tools
+              // arrive namespaced as <server>__get-time, so look the card up
+              // by base name to cover both spellings.
+              const Card = toolCardFor(baseToolName(toolName));
+              if (Card) {
                 return (
-                  <WeatherCard
+                  <Card
                     key={index}
-                    type={typeLabel}
+                    name={toolName}
                     state={toolPart.state}
                     input={toolPart.input}
                     output={toolPart.output}
-                    errorText={toolPart.errorText}
-                  />
-                );
-              }
-              // MCP tools arrive namespaced as <server>__get-time.
-              if (toolName === "get-time" || toolName.endsWith("__get-time")) {
-                return (
-                  <TimeCard
-                    key={index}
-                    type={typeLabel}
-                    state={toolPart.state}
-                    input={toolPart.input}
-                    output={toolPart.output}
-                    errorText={toolPart.errorText}
-                  />
-                );
-              }
-              if (toolName === "generate-file") {
-                return (
-                  <FileCard
-                    key={index}
-                    state={toolPart.state}
-                    input={toolPart.input as { filename: string; content: string; description?: string } | undefined}
-                    output={toolPart.output as { filename: string; description: string; downloadUrl: string; size: number } | undefined}
-                    errorText={toolPart.errorText}
-                  />
-                );
-              }
-              if (toolName === "generate-files") {
-                return (
-                  <FileCard
-                    key={index}
-                    state={toolPart.state}
-                    input={toolPart.input as { filename?: string; files?: Array<{ filename: string; content: string }>; description?: string } | undefined}
-                    output={toolPart.output as { filename: string; description: string; downloadUrl: string; size: number } | undefined}
-                    errorText={toolPart.errorText}
-                  />
-                );
-              }
-              if (toolName === "qr-code") {
-                return (
-                  <QrCard
-                    key={index}
-                    state={toolPart.state}
-                    input={toolPart.input as { content: string; size?: number } | undefined}
-                    output={toolPart.output as { qrCodeUrl: string; content: string; size: number } | undefined}
-                    errorText={toolPart.errorText}
-                  />
-                );
-              }
-              if (toolName === "web-fetch") {
-                return (
-                  <WebFetchCard
-                    key={index}
-                    state={toolPart.state}
-                    input={toolPart.input as { url: string; format?: string } | undefined}
-                    output={toolPart.output as { url: string; content: string; type: string } | undefined}
                     errorText={toolPart.errorText}
                   />
                 );

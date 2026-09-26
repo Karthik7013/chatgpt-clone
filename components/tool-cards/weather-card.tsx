@@ -20,10 +20,10 @@ import {
   ToolHeader,
   ToolInput,
   ToolOutput,
-  type ToolState,
 } from "@/components/ai-elements/tool";
+import type { ToolCardProps } from "@/components/tool-cards/types";
 
-export type WeatherData = {
+type WeatherData = {
   city: string;
   condition: string;
   tempC: number;
@@ -39,6 +39,13 @@ function isWeatherData(value: unknown): value is WeatherData {
     typeof v.tempC === "number" &&
     typeof v.humidity === "number"
   );
+}
+
+function inputCity(input: unknown): string {
+  if (typeof input === "object" && input !== null) {
+    return String((input as Record<string, unknown>).city ?? "");
+  }
+  return "";
 }
 
 function ConditionIcon({ condition }: { condition: string }) {
@@ -67,38 +74,25 @@ function ConditionIcon({ condition }: { condition: string }) {
 }
 
 /**
- * Rich card for the `weather` tool. Loading skeleton while the tool runs,
- * weather display on success, error block on failure. Falls back to the
- * generic Tool renderer when the output doesn't match the expected shape
- * (e.g. messages persisted before the structured output existed).
+ * Rich card for the `weather` tool. Skeleton while running, the forecast on
+ * success, an error block on failure. Falls back to the generic renderer when
+ * the output is not the expected shape, e.g. messages persisted before the
+ * tool returned structured data.
  */
-export function WeatherCard({
-  state,
-  input,
-  output,
-  errorText,
-  type,
-}: {
-  state: ToolState;
-  input?: unknown;
-  output?: unknown;
-  errorText?: string;
-  type: string;
-}) {
-  if (
-    state === "input-streaming" ||
-    state === "input-available" ||
-    (state === "output-available" && !isWeatherData(output))
-  ) {
-    const city =
-      typeof input === "object" && input !== null
-        ? String((input as Record<string, unknown>).city ?? "")
-        : "";
-    // Old string-shaped outputs predate the card: keep them readable.
-    if (state === "output-available") {
+export function WeatherCard({ name, state, input, output, errorText }: ToolCardProps) {
+  if (state === "output-error") {
+    return (
+      <div className="w-full max-w-full rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
+        Couldn&apos;t get the weather{errorText ? `: ${errorText}` : "."} Try another city.
+      </div>
+    );
+  }
+
+  if (state === "output-available") {
+    if (!isWeatherData(output)) {
       return (
         <Tool defaultOpen={false}>
-          <ToolHeader type={type} state={state} />
+          <ToolHeader type={`tool-${name}`} state={state} />
           <ToolContent>
             <ToolInput input={input} />
             <ToolOutput output={output} errorText={errorText} />
@@ -106,48 +100,39 @@ export function WeatherCard({
         </Tool>
       );
     }
-    return (
-      <div
-        className={cn(
-          "w-full max-w-full rounded-xl border border-border bg-surface p-4",
-        )}
-        aria-live="polite"
-      >
-        <div className="flex items-center gap-4">
-          <div className="size-10 shrink-0 animate-pulse rounded-full bg-surface-2" />
-          <div className="flex flex-1 flex-col gap-2">
-            <div className="h-7 w-24 animate-pulse rounded-md bg-surface-2" />
-            <div className="h-4 w-40 animate-pulse rounded-md bg-surface-2" />
-          </div>
+    return <WeatherSummary data={output} />;
+  }
+
+  const city = inputCity(input);
+  return (
+    <div
+      className={cn(
+        "w-full max-w-full rounded-xl border border-border bg-surface p-4",
+      )}
+      aria-live="polite"
+    >
+      <div className="flex items-center gap-4">
+        <div className="size-10 shrink-0 animate-pulse rounded-full bg-surface-2" />
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="h-7 w-24 animate-pulse rounded-md bg-surface-2" />
+          <div className="h-4 w-40 animate-pulse rounded-md bg-surface-2" />
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Checking the weather{city ? ` in ${city}` : ""}…
-        </p>
       </div>
-    );
-  }
+      <p className="mt-3 text-xs text-muted-foreground">
+        Checking the weather{city ? ` in ${city}` : ""}…
+      </p>
+    </div>
+  );
+}
 
-  if (state === "output-error") {
-    return (
-      <div className="w-full max-w-full rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-        Couldn&apos;t get the weather{errorText ? `: ${errorText}` : "."} Try
-        another city.
-      </div>
-    );
-  }
-
-  const data = output as WeatherData;
+function WeatherSummary({ data }: { data: WeatherData }) {
   return (
     <div className="w-full max-w-full rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center gap-4">
         <ConditionIcon condition={data.condition} />
         <div className="flex flex-col">
-          <span className="text-3xl font-semibold tabular-nums">
-            {data.tempC}°C
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {data.condition}
-          </span>
+          <span className="text-3xl font-semibold tabular-nums">{data.tempC}°C</span>
+          <span className="text-sm text-muted-foreground">{data.condition}</span>
         </div>
         <div className="ml-auto flex flex-col items-end gap-1 text-sm">
           <span className="flex items-center gap-1 font-medium">

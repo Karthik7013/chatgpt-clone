@@ -1,24 +1,25 @@
 "use client";
 
 import { ExternalLink, Globe, Loader2, AlertCircle } from "lucide-react";
-import type { ToolState } from "@/components/ai-elements/tool";
+import type { ToolCardProps } from "@/components/tool-cards/types";
 
-interface WebFetchCardProps {
-  state: ToolState;
-  input?: { url: string; format?: string };
-  output?: { url: string; content: string; type: string };
-  errorText?: string;
-}
+type WebFetchInput = { url?: string };
+type WebFetchOutput = { url?: string; content?: string; type?: string };
 
-export function WebFetchCard({ state, input, output, errorText }: WebFetchCardProps) {
+/** Card for the `web-fetch` tool: shows the page URL and a content preview. */
+export function WebFetchCard({ state, input, output, errorText }: ToolCardProps) {
+  const inData = input as WebFetchInput | undefined;
+  const outData = output as WebFetchOutput | undefined;
+  const content = outData?.content ?? "";
+
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
         <Globe className="size-4 text-blue-500" />
         <span className="text-sm font-medium">Web Fetch</span>
-        {state === "output-available" && output && (
+        {state === "output-available" && content && (
           <span className="ml-auto text-xs text-muted-foreground">
-            {output.type} · {(output.content.length / 1000).toFixed(1)}k chars
+            {outData?.type} · {(content.length / 1000).toFixed(1)}k chars
           </span>
         )}
       </div>
@@ -27,7 +28,7 @@ export function WebFetchCard({ state, input, output, errorText }: WebFetchCardPr
         {state === "input-streaming" && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            <span>Fetching {input?.url}…</span>
+            <span>Fetching {inData?.url}…</span>
           </div>
         )}
 
@@ -38,24 +39,26 @@ export function WebFetchCard({ state, input, output, errorText }: WebFetchCardPr
           </div>
         )}
 
-        {state === "output-available" && output && (
+        {state === "output-available" && content && (
           <div className="space-y-3">
-            <p className="truncate text-xs text-muted-foreground">{output.url}</p>
+            <p className="truncate text-xs text-muted-foreground">{outData?.url}</p>
 
             <p className="line-clamp-6 text-sm leading-relaxed text-muted-foreground">
-              {output.content.slice(0, 500)}
-              {output.content.length > 500 && "…"}
+              {content.slice(0, 500)}
+              {content.length > 500 && "…"}
             </p>
 
-            <a
-              href={output.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:text-blue-600 hover:underline"
-            >
-              <ExternalLink className="size-3.5" />
-              Open Link
-            </a>
+            {outData?.url && (
+              <a
+                href={outData.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:text-blue-600 hover:underline"
+              >
+                <ExternalLink className="size-3.5" />
+                Open Link
+              </a>
+            )}
           </div>
         )}
       </div>
