@@ -1,5 +1,11 @@
 import type { ProviderConfig } from "./types";
 
+/**
+ * Model used when the client does not send one. Must be `providerId:modelId`
+ * and the provider must have its API key set in `.env.local`.
+ */
+export const DEFAULT_MODEL_ID = "kilo:kilo-auto/free";
+
 export const PROVIDERS: ProviderConfig[] = [
   {
     id: "openrouter",

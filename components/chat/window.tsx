@@ -5,10 +5,9 @@ import { useChat } from "@ai-sdk/react";
 import type { UIMessage, FileUIPart } from "ai";
 import { Check, CircleAlert, Copy, FileText, Globe, Loader2, RotateCcw } from "lucide-react";
 
-import {
-  loadMessages,
-  saveMessages,
-} from "@/lib/chat-store";
+import { loadMessages, saveMessages } from "@/lib/chat-store";
+import { DEFAULT_MODEL_ID } from "@/lib/providers/config";
+import { friendlyError } from "@/lib/errors";
 import { uploadFileToWorker, type UploadResult } from "@/lib/file-upload";
 import {
   Conversation,
@@ -107,7 +106,7 @@ function ChatSession({
   loadFailed: boolean;
 }) {
   const [input, setInput] = React.useState("");
-  const [model, setModel] = React.useState("kilo:kilo-auto/free");
+  const [model, setModel] = React.useState(DEFAULT_MODEL_ID);
   const [webSearchEnabled, setWebSearchEnabled] = React.useState(true);
   const [pendingFiles, setPendingFiles] = React.useState<(FileUIPart & { id: string; tmpUrl: string })[]>([]);
   const [uploading, setUploading] = React.useState(false);
@@ -115,27 +114,7 @@ function ChatSession({
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const hasNotifiedFirstMessage = React.useRef(initialMessages.length > 0);
 
-  function getErrorMessage(err: unknown): string {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("429") || msg.includes("rate_limit") || msg.includes("quota")) {
-      return "Rate limit exceeded. Try a different model or wait a moment.";
-    }
-    if (msg.includes("PERMISSION_DENIED") || msg.includes("403")) {
-      return "API key error. Check your provider API key in .env.local.";
-    }
-    if (msg.includes("INVALID_ARGUMENT") || msg.includes("400")) {
-      return "Invalid request. The prompt or file may be too large.";
-    }
-    if (msg.includes("UNAVAILABLE") || msg.includes("503")) {
-      return "Service temporarily unavailable. Try again later.";
-    }
-    if (msg.includes("deadline_exceeded") || msg.includes("504")) {
-      return "Request timed out. Try a shorter prompt or smaller file.";
-    }
-    return msg || "Something went wrong. Try again.";
-  }
-
-  const { messages, sendMessage, setMessages, regenerate, status, error, stop, clearError } = useChat({
+  const { messages, sendMessage, regenerate, status, error, stop, clearError } = useChat({
     id: chatId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -258,7 +237,7 @@ function ChatSession({
           {error && !isBusy ? (
             <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
               <CircleAlert className="size-3.5 shrink-0" />
-              <span className="flex-1">{getErrorMessage(error)}</span>
+              <span className="flex-1">{friendlyError(error)}</span>
               <button
                 type="button"
                 onClick={handleRetry}

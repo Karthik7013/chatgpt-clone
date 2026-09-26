@@ -1,4 +1,5 @@
 import { createModel } from "@/lib/providers/factory";
+import { DEFAULT_MODEL_ID } from "@/lib/providers/config";
 import { z } from "zod";
 import { loadMcpTools } from "@/lib/mcp";
 import { fetchAllFileContents } from "@/lib/file-reader";
@@ -405,7 +406,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "messages array required" }, { status: 400 });
     }
 
-    const selectedModel = model ?? "kilo:kilo-auto/free";
+    const selectedModel = model ?? DEFAULT_MODEL_ID;
 
     // Read file contents from all user messages in parallel
     const messagesWithFiles = await Promise.all(
