@@ -19,7 +19,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Sidebar,
   SidebarContent,
@@ -31,103 +30,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-
-function ChatListPopover({
-  chats,
-  activeChatId,
-  onSelect,
-  onDelete,
-}: {
-  chats: ChatSummary[];
-  activeChatId: string;
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const closeTimer = React.useRef<ReturnType<typeof setTimeout>>(null);
-
-  function clearCloseTimer() {
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-  }
-
-  function scheduleClose() {
-    clearCloseTimer();
-    closeTimer.current = setTimeout(() => setOpen(false), 150);
-  }
-
-  function handleTriggerEnter() {
-    clearCloseTimer();
-    setOpen(true);
-  }
-
-  function handleContentLeave() {
-    scheduleClose();
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          onMouseEnter={handleTriggerEnter}
-          onMouseLeave={scheduleClose}
-          title="Chats"
-          aria-label="Open chat list"
-          className="flex size-7 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          <MessageSquareIcon className="size-4" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        side="right"
-        align="start"
-        sideOffset={8}
-        onMouseEnter={clearCloseTimer}
-        onMouseLeave={handleContentLeave}
-        className="w-64 p-0"
-      >
-        <div className="flex flex-col">
-          <div className=" px-2 py-1">
-            <p className="px-2 py-1 text-xs font-medium text-muted-foreground">
-              Recent
-            </p>
-            {chats.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground">
-                No conversations yet.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-0.5">
-                {chats.map((chat) => (
-                  <li key={chat.id}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSelect(chat.id);
-                        setOpen(false);
-                      }}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-sidebar-accent ${chat.id === activeChatId
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground"
-                        }`}
-                    >
-                      <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 flex-1 truncate">
-                        {chat.title}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 export function ChatSidebar({
   chats,

@@ -3,7 +3,6 @@
 import * as React from "react";
 import { ArrowUpIcon, PlusIcon, SquareIcon } from "lucide-react";
 import type { FileUIPart } from "ai";
-import { nanoid } from "nanoid";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -12,9 +11,7 @@ import {
   Attachments,
   Attachment,
   AttachmentPreview,
-  AttachmentInfo,
   AttachmentRemove,
-  type AttachmentData,
 } from "@/components/ai-elements/attachments";
 
 export function PromptInput({

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileIcon, DownloadIcon, Loader2Icon, FileText } from "lucide-react";
+import { DownloadIcon, Loader2Icon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ToolState = "input-streaming" | "input-available" | "output-available" | "output-error";
