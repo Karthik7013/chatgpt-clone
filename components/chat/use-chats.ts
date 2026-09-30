@@ -34,6 +34,34 @@ function dedupeById(chats: ChatSummary[]): ChatSummary[] {
   return chats.filter((chat) => !seen.has(chat.id) && seen.add(chat.id));
 }
 
+const CHAT_PATH = /^\/c\/([^/]+)$/;
+
+function chatPath(id: string): string {
+  return `/c/${encodeURIComponent(id)}`;
+}
+
+/** The chat id in the current URL, or null when the URL is not a chat. */
+function chatIdFromPath(pathname: string): string | null {
+  const match = CHAT_PATH.exec(pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+/** Moves the URL to a chat without remounting the tree, so no stream aborts. */
+function writeChatUrl(id: string, mode: "push" | "replace") {
+  const url = chatPath(id);
+  if (window.location.pathname === url) return;
+  if (mode === "push") {
+    window.history.pushState(null, "", url);
+  } else {
+    window.history.replaceState(null, "", url);
+  }
+}
+
 /**
  * Owns the chat list and every operation on it: which chat is open, creating,
  * renaming, deleting, and naming a chat after its first message.
@@ -70,15 +98,25 @@ export function useChats(initialChatId?: string) {
         if (requested) {
           setChats(existing);
           setActiveChatId(requested.id);
-        } else if (existing.length > 0) {
+          // The deep link already matches; nothing to correct.
+          return;
+        }
+
+        if (existing.length > 0) {
           setChats(existing);
           setActiveChatId(existing[0].id);
-        } else {
-          const chat = await createChat();
-          if (cancelled) return;
-          setChats([chat]);
-          setActiveChatId(chat.id);
+          // Reached via `/` or an unknown id, so point the URL at the chat we
+          // actually opened. Replacing rather than pushing keeps a dead id out
+          // of the history.
+          writeChatUrl(existing[0].id, "replace");
+          return;
         }
+
+        const chat = await createChat();
+        if (cancelled) return;
+        setChats([chat]);
+        setActiveChatId(chat.id);
+        writeChatUrl(chat.id, "replace");
       } catch (err) {
         console.error("Failed to bootstrap chats:", err);
         if (cancelled) return;
@@ -110,13 +148,70 @@ export function useChats(initialChatId?: string) {
     };
   }, [activeChatId]);
 
+  // Back and Forward move between chats. The browser has already written the
+  // URL by the time this fires, so this only has to open that chat — writing
+  // history again here would trap the user.
+  React.useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+
+    async function onPopState() {
+      const id = chatIdFromPath(window.location.pathname);
+      // Not a chat URL: the user left the app, which Next.js owns.
+      if (!id || id === activeChatId) return;
+
+      const known = chats.some((chat) => chat.id === id);
+      if (known) {
+        setActiveChatId(id);
+        return;
+      }
+
+      // A chat that was deleted, or one this tab has not seen yet. Reload the
+      // list before giving up on it, then fall back to the newest chat and
+      // replace the now-unreachable entry.
+      try {
+        const existing = dedupeById(await listChats());
+        if (cancelled) return;
+
+        const requested = existing.find((chat) => chat.id === id);
+        if (requested) {
+          setChats(existing);
+          setActiveChatId(requested.id);
+          return;
+        }
+
+        if (existing.length === 0) return;
+        setChats(existing);
+        setActiveChatId(existing[0].id);
+        writeChatUrl(existing[0].id, "replace");
+      } catch (err) {
+        console.error("Failed to open chat from history:", err);
+      }
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [chats, activeChatId, ready]);
+
   async function refreshChats() {
     setChats(dedupeById(await listChats()));
   }
 
+  /** Opens a chat and records it in history so Back returns to the previous one. */
+  function selectChat(id: string) {
+    // Re-selecting the open chat must not stack up history entries.
+    if (id === activeChatId) return;
+    setActiveChatId(id);
+    writeChatUrl(id, "push");
+  }
+
   async function newChat() {
     // Already sitting on an empty chat: stay put rather than stacking up
-    // empty chats the user cannot tell apart.
+    // empty chats the user cannot tell apart. Staying put also means leaving
+    // the URL alone.
     if (activeChatId) {
       try {
         const messages = await loadMessages(activeChatId);
@@ -130,6 +225,7 @@ export function useChats(initialChatId?: string) {
       const chat = await createChat();
       await refreshChats();
       setActiveChatId(chat.id);
+      writeChatUrl(chat.id, "push");
     } catch (err) {
       console.error("Failed to create chat:", err);
       setStorageError(ERROR.create);
@@ -159,14 +255,17 @@ export function useChats(initialChatId?: string) {
       }
 
       // The open chat was deleted, so move to another one, creating a fresh
-      // chat if that was the last one.
+      // chat if that was the last one. Replacing the URL keeps the deleted
+      // chat's id out of the history, where it could only 404.
       if (remaining.length > 0) {
         setChats(remaining);
         setActiveChatId(remaining[0].id);
+        writeChatUrl(remaining[0].id, "replace");
       } else {
         const chat = await createChat();
         setChats([chat]);
         setActiveChatId(chat.id);
+        writeChatUrl(chat.id, "replace");
       }
     } catch (err) {
       console.error("Failed to delete chat:", err);
@@ -194,7 +293,7 @@ export function useChats(initialChatId?: string) {
     storageError,
     dismissStorageError: () => setStorageError(null),
     newChat,
-    selectChat: setActiveChatId,
+    selectChat,
     renameChatById,
     deleteChatById,
     nameFromFirstMessage,
