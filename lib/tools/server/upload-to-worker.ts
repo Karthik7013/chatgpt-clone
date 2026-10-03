@@ -22,7 +22,6 @@ export async function uploadToWorker(
         "X-File-Name": filename,
         "X-Media-Type": mediaType,
         "Content-Type": mediaType,
-        "Content-Length": String(blob.size),
       },
       body: blob,
       signal: controller.signal,

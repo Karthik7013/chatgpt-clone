@@ -53,7 +53,6 @@ export async function uploadFileToWorker(file: File): Promise<UploadResult> {
       "X-File-Name": file.name,
       "X-Media-Type": getMediaType(file),
       "Content-Type": file.type || "application/octet-stream",
-      "Content-Length": String(file.size),
     },
     body: file,
     signal: AbortSignal.timeout(15_000),
