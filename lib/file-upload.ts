@@ -24,10 +24,13 @@ function getMediaType(file: File): string {
 }
 
 export interface UploadResult {
+  success: boolean;
   itemId: string;
   fileName: string;
-  instantTmpUrl: string | null;
-  instantDownloadUrl: string;
+  objectKey: string;
+  publicUrl: string | null;
+  sizeBytes: number;
+  createdAt: string;
 }
 
 export function validateFile(file: File): string | null {
@@ -50,6 +53,7 @@ export async function uploadFileToWorker(file: File): Promise<UploadResult> {
       "X-File-Name": file.name,
       "X-Media-Type": getMediaType(file),
       "Content-Type": file.type || "application/octet-stream",
+      "Content-Length": String(file.size),
     },
     body: file,
     signal: AbortSignal.timeout(15_000),

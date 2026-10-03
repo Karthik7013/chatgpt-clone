@@ -1,6 +1,6 @@
 /**
  * Upload target for generated files. The worker stores the blob and returns
- * URLs for it; `instantTmpUrl` expires, `instantDownloadUrl` does not.
+ * URLs for it.
  */
 const WORKER_URL = "https://ia-upload.karthiktumala143.workers.dev/";
 
@@ -22,6 +22,7 @@ export async function uploadToWorker(
         "X-File-Name": filename,
         "X-Media-Type": mediaType,
         "Content-Type": mediaType,
+        "Content-Length": String(blob.size),
       },
       body: blob,
       signal: controller.signal,
@@ -34,7 +35,7 @@ export async function uploadToWorker(
 
     return {
       fileName: data.fileName,
-      downloadUrl: data.instantDownloadUrl || data.instantTmpUrl,
+      downloadUrl: data.publicUrl || "",
     };
   } finally {
     clearTimeout(timer);

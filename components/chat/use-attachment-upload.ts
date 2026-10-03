@@ -37,8 +37,8 @@ export function useAttachmentUpload() {
             id: result.itemId,
             filename: result.fileName,
             mediaType: file.type || "application/octet-stream",
-            url: result.instantDownloadUrl,
-            tmpUrl: result.instantTmpUrl || result.instantDownloadUrl,
+            url: result.publicUrl || "",
+            tmpUrl: result.publicUrl || "",
           };
         }),
       );
