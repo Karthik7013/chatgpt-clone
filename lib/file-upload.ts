@@ -33,6 +33,25 @@ export interface UploadResult {
   createdAt: string;
 }
 
+function mapWorkerResponse(data: {
+  success: boolean;
+  key: string;
+  name: string;
+  size: number;
+  etag: string;
+  url: string;
+}): UploadResult {
+  return {
+    success: data.success,
+    itemId: data.key,
+    fileName: data.name,
+    objectKey: data.key,
+    publicUrl: data.url || null,
+    sizeBytes: data.size,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 export function validateFile(file: File): string | null {
   if (file.size > MAX_FILE_SIZE) {
     return `File size exceeds 50 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
@@ -58,11 +77,18 @@ export async function uploadFileToWorker(file: File): Promise<UploadResult> {
     signal: AbortSignal.timeout(15_000),
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    success: boolean;
+    key: string;
+    name: string;
+    size: number;
+    etag: string;
+    url: string;
+  };
 
   if (!response.ok || !data.success) {
     throw new Error(data.error || "Upload failed");
   }
 
-  return data;
+  return mapWorkerResponse(data);
 }
