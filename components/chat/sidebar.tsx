@@ -63,7 +63,7 @@ export function ChatSidebar({
   }
 
   return (
-    <Sidebar className="border-0">
+    <Sidebar className="border-0 py-3">
       <SidebarHeader>
         {open ? (
           <div className="flex items-center gap-2 px-1 py-1">
