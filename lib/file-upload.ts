@@ -87,7 +87,7 @@ export async function uploadFileToWorker(file: File): Promise<UploadResult> {
   };
 
   if (!response.ok || !data.success) {
-    throw new Error(data.error || "Upload failed");
+    throw new Error((data as { error?: string }).error || "Upload failed");
   }
 
   return mapWorkerResponse(data);
