@@ -3,7 +3,6 @@
 import * as React from "react";
 import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,7 +67,6 @@ export function ChatHeader({
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <ThemeToggle />
         {showOptions ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

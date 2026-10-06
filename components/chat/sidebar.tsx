@@ -13,6 +13,7 @@ import {
 
 import type { ChatSummary } from "@/lib/chat-store";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -130,12 +131,15 @@ export function ChatSidebar({
 
       {open && (
         <SidebarFooter>
-          <p
-            title="Next.js · shadcn/ui · AI Elements · Vercel AI SDK"
-            className="truncate text-xs text-muted-foreground"
-          >
-            Next.js · shadcn/ui · AI Elements · Vercel AI SDK
-          </p>
+          <div className="flex items-center gap-1">
+            <p
+              title="Next.js · shadcn/ui · AI Elements · Vercel AI SDK"
+              className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
+            >
+              Next.js · shadcn/ui · AI Elements · Vercel AI SDK
+            </p>
+            <ThemeToggle />
+          </div>
         </SidebarFooter>
       )}
     </Sidebar>
