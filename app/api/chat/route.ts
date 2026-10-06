@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const modelMessages = await convertToModelMessages(
       withoutFileParts(messagesWithFiles),
     );
-    const loaded = await loadTools({ webSearchEnabled });
+    const loaded = await loadTools({ webSearchEnabled: !!webSearchEnabled });
     closeAll = loaded.closeAll;
 
     result = streamText({
