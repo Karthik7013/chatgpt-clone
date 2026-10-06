@@ -9,6 +9,7 @@ import {
 import { createModel } from "@/lib/providers/factory";
 import { DEFAULT_MODEL_ID } from "@/lib/providers/provider-config";
 import { apiError } from "@/lib/api-response";
+import { streamErrorMessage } from "@/lib/errors";
 import { loadTools } from "@/lib/tools/tool-registry";
 import { MAX_STEPS, SYSTEM_PROMPT } from "@/lib/tools/system-prompt";
 import { readChatRequest } from "@/lib/tools/read-chat-request";
@@ -63,10 +64,14 @@ export async function POST(req: Request) {
   }
 
   return createUIMessageStreamResponse({
+    // The SDK masks stream failures as "An error occurred." by default,
+    // which hides actionable cases like 429s. Translate known failures to
+    // safe messages here; full details stay in the server log above.
     stream: toUIMessageStream({
       stream: result.stream,
       sendReasoning: true,
       sendSources: true,
+      onError: streamErrorMessage,
     }),
   });
 }
