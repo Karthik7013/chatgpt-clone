@@ -132,44 +132,44 @@ function ChatSession({
 
   return (
     <div className="flex h-full flex-col">
-      <Conversation scrollKey={lastUserMessageId ?? "empty"}>
-        <ConversationContent>
-          {messages.length === 0 ? (
-            <EmptyHome />
-          ) : (
-            messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isStreamingTarget={isBusy && message.id === lastMessageId}
-              />
-            ))
-          )}
+        <Conversation scrollKey={lastUserMessageId ?? "empty"}>
+          <ConversationContent className="px-6">
+            {messages.length === 0 ? (
+              <EmptyHome />
+            ) : (
+              messages.map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isStreamingTarget={isBusy && message.id === lastMessageId}
+                />
+              ))
+            )}
 
-          {status === "submitted" ? (
-            <Shimmer className="py-2 text-sm" duration={2}>
-              Generating response…
-            </Shimmer>
-          ) : null}
+            {status === "submitted" ? (
+              <Shimmer className="py-2 text-sm" duration={2}>
+                Generating response…
+              </Shimmer>
+            ) : null}
 
-          {error && !isBusy ? (
-            <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-              <CircleAlert className="size-3.5 shrink-0" />
-              <span className="flex-1">{friendlyError(error)}</span>
-              <button
-                type="button"
-                onClick={handleRetry}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-danger px-2.5 py-1.5 font-medium text-white transition-opacity hover:opacity-90"
-              >
-                <RotateCcw className="size-3.5" />
-                Retry
-              </button>
-            </div>
-          ) : null}
-        </ConversationContent>
-        <ConversationScrollButton />
-      </Conversation>
-
+            {error && !isBusy ? (
+              <div className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+                <CircleAlert className="size-3.5 shrink-0" />
+                <span className="flex-1">{friendlyError(error)}</span>
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  className="flex shrink-0 items-center gap-1.5 rounded-lg bg-danger px-2.5 py-1.5 font-medium text-white transition-opacity hover:opacity-90"
+                >
+                  <RotateCcw className="size-3.5" />
+                  Retry
+                </button>
+              </div>
+            ) : null}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
+    
       <ChatComposer
         input={input}
         onInputChange={setInput}
