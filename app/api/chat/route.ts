@@ -25,6 +25,7 @@ export async function POST(req: Request) {
 
   const { messages, model, webSearchEnabled } = request.data;
   const selectedModel = model ?? DEFAULT_MODEL_ID;
+  console.log("[api/chat] selectedModel:", selectedModel);
 
   // A bad model id or missing API key is the client's fault, not ours.
   let result: ReturnType<typeof streamText>;
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     const modelMessages = await convertToModelMessages(
       withoutFileParts(messagesWithFiles),
     );
-    const loaded = await loadTools({ webSearchEnabled: !!webSearchEnabled });
+    const loaded = await loadTools(!!webSearchEnabled);
     closeAll = loaded.closeAll;
 
     result = streamText({

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { getConfiguredProviders, isProviderConfigured } from "@/lib/providers/provider-config";
@@ -34,6 +34,7 @@ export function useProviders() {
         })
         .finally(() => setLoading(false));
     }
+    setLoading(false);
   }, []);
 
   return { providers, loading, error };

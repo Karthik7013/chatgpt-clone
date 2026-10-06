@@ -161,7 +161,7 @@ export const webFetchTool = tool({
         return { url, content: body.slice(2000), type: "text" };
       }
 
-      const text = fetchPageContent(body);
+      const text = await fetchPageContent(body);
       if (!text) {
         return { url, content: "[Page returned empty content]", type: "empty" };
       }
@@ -236,7 +236,7 @@ export async function executeTool(
 ): Promise<{ content: any; error?: string } | undefined> {
   const toolImpl = getToolImplementation(name);
   if (!toolImpl) {
-    return { error: `Tool "${name}" is disabled or unknown.` };
+    return { error: `Tool "${name}" is disabled or unknown.` as const, content: undefined };
   }
   try {
     const result = await toolImpl.execute(parameters);
@@ -244,6 +244,7 @@ export async function executeTool(
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Tool execution failed",
+      content: undefined,
     };
   }
 }
@@ -273,7 +274,7 @@ export async function loadTools(
   return {
     tools,
     closeAll: async () => {},
-    enabledTools,
+    enabledTools: enabled,
   };
 }
 
