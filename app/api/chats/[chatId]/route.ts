@@ -1,6 +1,9 @@
 import { z } from "zod";
-import { getDb, type ChatDoc, type MessageDoc } from "@/lib/mongodb";
-import type { ChatSummary } from "@/lib/chat-store";
+import {
+  deleteChat,
+  getChat,
+  updateChatTitle,
+} from "@/lib/server/chat-repository";
 
 export const runtime = "nodejs";
 
@@ -24,22 +27,17 @@ export async function PATCH(
     if (!parsed.success) {
       return Response.json({ error: "Invalid request body." }, { status: 400 });
     }
-    const db = await getDb();
-    const chat = await db.collection<ChatDoc>("chats").findOne({ _id: chatId });
+    const chat = await getChat(chatId);
     if (!chat) {
       return Response.json({ error: "Chat not found." }, { status: 404 });
     }
-    const now = Date.now();
-    const title = parsed.data.title ?? chat.title;
-    await db
-      .collection<ChatDoc>("chats")
-      .updateOne({ _id: chatId }, { $set: { title, updatedAt: now } });
-    const summary: ChatSummary = {
-      id: chatId,
-      title,
-      createdAt: chat.createdAt,
-      updatedAt: now,
-    };
+    const summary = await updateChatTitle(
+      chatId,
+      parsed.data.title ?? chat.title,
+    );
+    if (!summary) {
+      return Response.json({ error: "Chat not found." }, { status: 404 });
+    }
     return Response.json(summary);
   } catch (err) {
     console.error(`[api/chats] PATCH ${chatId} failed:`, err);
@@ -53,9 +51,7 @@ export async function DELETE(
 ) {
   const { chatId } = await params;
   try {
-    const db = await getDb();
-    await db.collection<ChatDoc>("chats").deleteOne({ _id: chatId });
-    await db.collection<MessageDoc>("messages").deleteOne({ _id: chatId });
+    await deleteChat(chatId);
     return Response.json({ ok: true });
   } catch (err) {
     console.error(`[api/chats] DELETE ${chatId} failed:`, err);

@@ -1,5 +1,14 @@
 import type { UIMessage } from "ai";
 
+/**
+ * Client-safe chat API wrapper.
+ *
+ * This module is imported by client components (`use client`), so it must
+ * NEVER import `mongodb`, `node:*`, or any other server-only module.
+ * All persistence goes through `/api/chats/*` fetch calls. Server-side
+ * MongoDB logic lives in `lib/server/chat-repository.ts`.
+ */
+
 export type ChatSummary = {
   id: string;
   title: string;

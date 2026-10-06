@@ -1,5 +1,5 @@
 import type { UIMessage } from "ai";
-import { getDb, type MessageDoc } from "@/lib/mongodb";
+import { loadMessages, saveMessages } from "@/lib/server/chat-repository";
 
 export const runtime = "nodejs";
 
@@ -11,11 +11,7 @@ export async function GET(
 ) {
   const { chatId } = await params;
   try {
-    const db = await getDb();
-    const doc = await db
-      .collection<MessageDoc>("messages")
-      .findOne({ _id: chatId });
-    return Response.json(doc?.messages ?? []);
+    return Response.json(await loadMessages(chatId));
   } catch (err) {
     console.error(`[api/chats] GET ${chatId}/messages failed:`, err);
     return Response.json({ error: "Failed to load messages." }, { status: 500 });
@@ -39,14 +35,7 @@ export async function PUT(
       return Response.json({ error: "Too many messages." }, { status: 400 });
     }
     const messages = body as UIMessage[];
-    const db = await getDb();
-    await db
-      .collection<MessageDoc>("messages")
-      .updateOne(
-        { _id: chatId },
-        { $set: { messages, updatedAt: Date.now() } },
-        { upsert: true },
-      );
+    await saveMessages(chatId, messages);
     return Response.json({ ok: true });
   } catch (err) {
     console.error(`[api/chats] PUT ${chatId}/messages failed:`, err);
