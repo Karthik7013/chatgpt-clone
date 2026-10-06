@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
-import { PROVIDERS } from "./config";
+import { PROVIDERS, getProviderKey, isProviderConfigured } from "./provider-config";
 
 export function parseModelIdentifier(id: string): { providerId: string; modelId: string } {
   const colonIndex = id.indexOf(":");
@@ -25,8 +25,12 @@ export function createModel(identifier: string): LanguageModel {
     throw new Error(`Unknown provider: "${providerId}" in "${identifier}"`);
   }
 
-  const apiKey = process.env[provider.envKey];
+  const apiKey = getProviderKey(providerId);
   if (!apiKey) {
+    throw new Error(`API key not configured for ${provider.name}.`);
+  }
+
+  if (!isProviderConfigured(providerId)) {
     throw new Error(`API key not configured for ${provider.name}. Set ${provider.envKey} in .env.local`);
   }
 

@@ -7,7 +7,7 @@ import {
 } from "ai";
 
 import { createModel } from "@/lib/providers/factory";
-import { DEFAULT_MODEL_ID } from "@/lib/providers/config";
+import { DEFAULT_MODEL_ID } from "@/lib/providers/provider-config";
 import { loadTools } from "@/lib/tools/server";
 import { MAX_STEPS, SYSTEM_PROMPT } from "@/lib/tools/system-prompt";
 import { readChatRequest } from "@/lib/tools/read-chat-request";

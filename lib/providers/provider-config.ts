@@ -1,11 +1,21 @@
-import type { ProviderConfig } from "./types";
+export type ProviderConfig = {
+  id: string;
+  name: string;
+  baseURL: string;
+  envKey: string;
+  headers?: Record<string, string>;
+  models: {
+    id: string;
+    name: string;
+    description: string;
+  }[];
+};
 
 /**
- * Model used when the client does not send one. Must be `providerId:modelId`
- * and the provider must have its API key set in `.env.local`.
+ * The provider configurations available in the application.
+ * Kept in a single file for maintainability - adding/removing providers
+ * only requires editing this file.
  */
-export const DEFAULT_MODEL_ID = "kilo:kilo-auto/free";
-
 export const PROVIDERS: ProviderConfig[] = [
   {
     id: "openrouter",
@@ -30,7 +40,7 @@ export const PROVIDERS: ProviderConfig[] = [
       { id: "inclusionai/ling-3.0-flash-fin:free", name: "Ling 3.0 Flash Fin", description: "Fast general, 262K" },
       { id: "inclusionai/ling-3.0-flash-sante:free", name: "Ling 3.0 Flash Sante", description: "Fast general, 262K" },
       { id: "nex-agi/nex-n2.5-pro:free", name: "Nex-N2.5-Pro", description: "Nex AGI, 262K" },
-      { id: "nex-agi/nex-n2.5-mini:free", name: "Nex-N2.5-Mini", description: "Nex AGI, 262K, fast" },
+      { id: "nex-agi/nex-n2.5-mini:free", name: "Nex-N2.5-Mini", description: "Nex AGI, 256K, fast" },
       { id: "liquid/lfm-2.5-2.6b:free", name: "LFM2.5 2.6B", description: "LiquidAI, 66K, fast" },
       { id: "openrouter/free", name: "Auto Router", description: "Picks best free model" },
     ],
@@ -52,7 +62,7 @@ export const PROVIDERS: ProviderConfig[] = [
       { id: "inclusionai/ling-3.0-flash-fin:free", name: "Ling 3.0 Flash Fin", description: "Fast general, 262K" },
       { id: "inclusionai/ling-3.0-flash-sante:free", name: "Ling 3.0 Flash Sante", description: "Fast general, 262K" },
       { id: "nex-agi/nex-n2.5-pro:free", name: "Nex-N2.5-Pro", description: "Nex AGI, 262K" },
-      { id: "nex-agi/nex-n2.5-mini:free", name: "Nex-N2.5-Mini", description: "Nex AGI, 262K, fast" },
+      { id: "nex-agi/nex-n2.5-mini:free", name: "Nex-N2.5-Mini", description: "Nex AGI, 256K, fast" },
       { id: "liquid/lfm-2.5-2.6b:free", name: "LFM2.5 2.6B", description: "LiquidAI, 66K, fast" },
     ],
   },
@@ -68,3 +78,50 @@ export const PROVIDERS: ProviderConfig[] = [
     ],
   },
 ];
+
+/**
+ * Default model used when the client does not send one.
+ * Must be `providerId:modelId` and the provider must have its API key set in `.env.local`.
+ */
+export const DEFAULT_MODEL_ID = "kilo:kilo-auto/free";
+
+/**
+ * Map of provider ID -> environment variable name for API key lookup.
+ * Keeps envKey close to provider definitions for maintainability.
+ */
+export const PROVIDER_ENV_KEYS: Record<string, string> = PROVIDERS.reduce(
+  (acc, provider) => {
+    acc[provider.id] = provider.envKey;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
+
+/**
+ * Get the environment variable name for a provider's API key.
+ */
+export function getProviderKey(providerId: string): string | undefined {
+  return PROVIDER_ENV_KEYS[providerId];
+}
+
+/**
+ * Check whether a provider's API key is configured (non-empty).
+ */
+export function isProviderConfigured(providerId: string): boolean {
+  const key = getProviderKey(providerId);
+  return !!key && key.trim().length > 0;
+}
+
+/**
+ * Find a provider config by its ID.
+ */
+export function getProvider(providerId: string): ProviderConfig | undefined {
+  return PROVIDERS.find((p) => p.id === providerId);
+}
+
+/**
+ * Get all configured providers (those with API keys set).
+ */
+export function getConfiguredProviders(): ProviderConfig[] {
+  return PROVIDERS.filter((p) => isProviderConfigured(p.id));
+}

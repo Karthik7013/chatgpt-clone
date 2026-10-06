@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
-import { PROVIDERS } from "@/lib/providers/config";
-import { isProviderConfigured } from "@/lib/providers/env";
+import { getConfiguredProviders } from "@/lib/providers/provider-config";
 
 export async function GET() {
   try {
-    const available = PROVIDERS
-      .filter((p) => isProviderConfigured(p.id))
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        models: p.models,
-      }));
+    const available = getConfiguredProviders().map((p) => ({
+      id: p.id,
+      name: p.name,
+      models: p.models,
+    }));
 
     return NextResponse.json({ providers: available });
   } catch (err) {

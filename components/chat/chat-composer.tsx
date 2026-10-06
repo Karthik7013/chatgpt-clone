@@ -60,7 +60,7 @@ export function ChatComposer({
   const nothingToSend = input.trim() === "" && files.length === 0;
 
   return (
-    <div className="mx-auto w-full max-w-3xl bg-background px-4 md:px-0">
+    <div className="mx-auto w-full max-w-3xl bg-background px-2 md:px-0">
       {saveError ? (
         <ErrorBanner message={saveError}>
           <button type="button" onClick={onDismissSaveError} className="rounded hover:underline">

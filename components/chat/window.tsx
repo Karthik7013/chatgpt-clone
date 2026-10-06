@@ -5,7 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { CircleAlert, Loader2, RotateCcw } from "lucide-react";
 
-import { DEFAULT_MODEL_ID } from "@/lib/providers/config";
+import { DEFAULT_MODEL_ID } from "@/lib/providers/provider-config";
 import { friendlyError } from "@/lib/errors";
 import {
   Conversation,
