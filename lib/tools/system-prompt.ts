@@ -1,6 +1,6 @@
 /**
  * Instructions sent to the model on every request. Keep tool-specific
- * behaviour here in sync with the tools enabled in `lib/tools/registry.ts`.
+ * behaviour here in sync with the tools enabled in `lib/tools/tool-registry.ts`.
  */
 export const SYSTEM_PROMPT = `You are a helpful, direct assistant.
 Format answers in GitHub-flavored markdown when it helps readability (lists, tables, code fences with a language tag).

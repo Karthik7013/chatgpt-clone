@@ -71,7 +71,6 @@ function ChatSession({
   const [input, setInput] = React.useState("");
   const [model, setModel] = React.useState(DEFAULT_MODEL_ID);
   const [webSearchEnabled, setWebSearchEnabled] = React.useState(true);
-  const [saveError, setSaveError] = React.useState<string | null>(null);
   const hasNotifiedFirstMessage = React.useRef(initialMessages.length > 0);
 
   const upload = useAttachmentUpload();
@@ -95,11 +94,10 @@ function ChatSession({
     onFirstMessage(firstUser);
   }, [messages, onFirstMessage]);
 
-  useAutosaveMessages({
+  const { saveError, dismissSaveError } = useAutosaveMessages({
     chatId,
     messages,
     enabled: !loadFailed,
-    onError: setSaveError,
   });
 
   function handleRetry() {
@@ -188,7 +186,7 @@ function ChatSession({
         webSearchEnabled={webSearchEnabled}
         onToggleWebSearch={() => setWebSearchEnabled((prev) => !prev)}
         saveError={saveError}
-        onDismissSaveError={() => setSaveError(null)}
+        onDismissSaveError={dismissSaveError}
         uploadError={upload.error}
       />
     </div>

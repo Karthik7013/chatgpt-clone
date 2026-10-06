@@ -4,6 +4,7 @@ import {
   getChat,
   updateChatTitle,
 } from "@/lib/server/chat-repository";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const runtime = "nodejs";
 
@@ -20,28 +21,27 @@ export async function PATCH(
   try {
     body = await req.json();
   } catch {
-    return Response.json({ error: "Invalid request body." }, { status: 400 });
+    return apiError("api/chats", "Invalid request body.", 400);
   }
   try {
     const parsed = patchSchema.safeParse(body);
     if (!parsed.success) {
-      return Response.json({ error: "Invalid request body." }, { status: 400 });
+      return apiError("api/chats", "Invalid request body.", 400);
     }
     const chat = await getChat(chatId);
     if (!chat) {
-      return Response.json({ error: "Chat not found." }, { status: 404 });
+      return apiError("api/chats", "Chat not found.", 404);
     }
     const summary = await updateChatTitle(
       chatId,
       parsed.data.title ?? chat.title,
     );
     if (!summary) {
-      return Response.json({ error: "Chat not found." }, { status: 404 });
+      return apiError("api/chats", "Chat not found.", 404);
     }
-    return Response.json(summary);
+    return apiOk(summary);
   } catch (err) {
-    console.error(`[api/chats] PATCH ${chatId} failed:`, err);
-    return Response.json({ error: "Failed to update chat." }, { status: 500 });
+    return apiError("api/chats", "Failed to update chat.", 500, err);
   }
 }
 
@@ -52,9 +52,8 @@ export async function DELETE(
   const { chatId } = await params;
   try {
     await deleteChat(chatId);
-    return Response.json({ ok: true });
+    return apiOk({ ok: true });
   } catch (err) {
-    console.error(`[api/chats] DELETE ${chatId} failed:`, err);
-    return Response.json({ error: "Failed to delete chat." }, { status: 500 });
+    return apiError("api/chats", "Failed to delete chat.", 500, err);
   }
 }

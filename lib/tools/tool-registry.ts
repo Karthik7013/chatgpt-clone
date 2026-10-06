@@ -1,18 +1,16 @@
-import { asSchema, tool } from "ai";
+import { asSchema, tool, type ToolSet } from "ai";
 import { z } from "zod";
 
-import { fetchPageContent } from "@/lib/tools/html-to-text";
-
-/** How many tool-call round trips the model may take before it must answer. */
-export const MAX_STEPS = 10;
+import {
+  MAX_PAGE_CHARS,
+  extractTextFromHtml,
+  fetchPageContent,
+} from "@/lib/tools/html-to-text";
 
 /**
- * Tool metadata - shared by server (which tools the model may call) and client
- * (which card renders a tool's result).
- *
- * Keep this file dependency-free. It is imported from both server and client
- * code, so pulling in `zod`, `ai`, or React here would break the RSC boundary
- * or ship server code to the browser.
+ * Server-only unified tool registry: metadata, AI SDK implementations, and
+ * loading helpers in one place. Imported only from API routes (via
+ * `@/lib/tools/tool-registry`), never from client components.
  */
 export type ToolMeta = {
   /** Key passed to `streamText`, and looked up in the tool-card registry. */
@@ -27,8 +25,10 @@ export type ToolMeta = {
 };
 
 /**
- * Tool implementations - mapped by name for the AI SDK.
- * Imported from individual tool files in `lib/tools/server/`.
+ * Tool implementations, keyed by the name the model sees. Whether a tool is
+ * actually offered is decided by `enabled` in `TOOL_REGISTRY` below — this is
+ * the implementation lookup only. Client tool cards key off `name`
+ * independently (see `components/tool-cards/registry.tsx`).
  */
 export const getTimeTool = tool({
   description:
@@ -66,6 +66,21 @@ export const getTimeTool = tool({
   },
 });
 
+export type WebSearchResult = {
+  /** 1-based position in the result list, so the model can cite as [1], [2]. */
+  index: number;
+  title: string;
+  url: string;
+  domain: string;
+  summary: string;
+  content: string;
+};
+
+/** Search result count the model may request, clamped to this range. */
+const MIN_RESULTS = 1;
+const MAX_RESULTS = 5;
+const DEFAULT_RESULTS = 3;
+
 export const webSearchTool = tool({
   description:
     "Search the web and read full page content. Returns search results with fetched content from each page. Use when the user asks about current events, recent news, or anything you need real-time information about. Always cite sources using [1], [2], etc.",
@@ -80,8 +95,8 @@ export const webSearchTool = tool({
   ),
   async execute({ query, numResults }) {
     const size = Math.min(
-      Math.max(numResults ?? 3, 1),
-      5,
+      Math.max(numResults ?? DEFAULT_RESULTS, MIN_RESULTS),
+      MAX_RESULTS,
     );
 
     try {
@@ -107,7 +122,7 @@ export const webSearchTool = tool({
 
       // Fetch every page in parallel; a page we cannot read still yields a
       // result so the model keeps the citation slot.
-      const results = await Promise.all(
+      const results: WebSearchResult[] = await Promise.all(
         data.results.map(async (r, i) => ({
           index: i + 1,
           title: r.title,
@@ -128,8 +143,9 @@ export const webSearchTool = tool({
   },
 });
 
-export const webFetchTool = tool({
-  description:
+const WEB_FETCH_TIMEOUT_MS = 20_000;
+
+export const webFetchTool = tool({  description:
     "Fetch and read the content of a specific web page URL. Use when the user wants to read a specific article or page.",
   inputSchema: asSchema(
     z.object({
@@ -139,7 +155,7 @@ export const webFetchTool = tool({
   async execute({ url }) {
     try {
       const res = await fetch(url, {
-        signal: AbortSignal.timeout(20_000),
+        signal: AbortSignal.timeout(WEB_FETCH_TIMEOUT_MS),
         headers: {
           "User-Agent": "Mozilla/5.0 (compatible; ChatGPT-Clone/1.0)",
           "Accept": "text/html,application/xhtml+xml,text/plain",
@@ -153,19 +169,19 @@ export const webFetchTool = tool({
       if (contentType.includes("application/json")) {
         return {
           url,
-          content: JSON.stringify(JSON.parse(body), null, 2).slice(2000),
+          content: JSON.stringify(JSON.parse(body), null, 2).slice(0, MAX_PAGE_CHARS),
           type: "json",
         };
       }
       if (contentType.includes("text/plain")) {
-        return { url, content: body.slice(2000), type: "text" };
+        return { url, content: body.slice(0, MAX_PAGE_CHARS), type: "text" };
       }
 
-      const text = await fetchPageContent(body);
+      const text = extractTextFromHtml(body);
       if (!text) {
         return { url, content: "[Page returned empty content]", type: "empty" };
       }
-      return { url, content: text.slice(2000), type: "html" };
+      return { url, content: text.slice(0, MAX_PAGE_CHARS), type: "html" };
     } catch (err) {
       if (err instanceof DOMException && err.name === "TimeoutError") {
         throw new Error("Page fetch timed out.");
@@ -196,91 +212,37 @@ export function enabledTools(): ToolMeta[] {
   return TOOL_REGISTRY.filter((tool) => tool.enabled);
 }
 
-/**
- * Get the implementation for a tool by name.
- * Returns undefined if the tool is disabled/unknown.
- */
-export function getToolImplementation(name: string): any {
-  const toolMeta = TOOL_REGISTRY.find((t) => t.name === name);
-  if (!toolMeta || !toolMeta.enabled) return undefined;
-  return IMPLEMENTATIONS[name];
-}
-
-/** Map of tool names to their AI SDK tool implementations. */
-const IMPLEMENTATIONS: Record<string, any> = {
+/** Map of tool names to their AI SDK tool implementations. Only live tools
+ * are listed here; `loadTools` only offers `enabled` tools, so there is
+ * nothing to keep in sync when flipping a tool on or off. */
+const IMPLEMENTATIONS: Record<string, ToolSet[string]> = {
   "get-time": getTimeTool,
   "web-search": webSearchTool,
   "web-fetch": webFetchTool,
-  "weather": {} as any,
-  "generate-file": {} as any,
-  "generate-files": {} as any,
-  "qr-code": {} as any,
 };
 
 /**
- * Get the schema for a tool by name.
- * Returns undefined if the tool is disabled/unknown.
- */
-export function getToolSchema(name: string): any {
-  const toolImpl = getToolImplementation(name);
-  return toolImpl?.schema;
-}
-
-/**
- * Execute a tool by name with the given parameters.
- * Returns the tool's result or undefined if the tool is disabled/unknown.
- */
-export async function executeTool(
-  name: string,
-  parameters: Record<string, any>
-): Promise<{ content: any; error?: string } | undefined> {
-  const toolImpl = getToolImplementation(name);
-  if (!toolImpl) {
-    return { error: `Tool "${name}" is disabled or unknown.` as const, content: undefined };
-  }
-  try {
-    const result = await toolImpl.execute(parameters);
-    return { content: result.content };
-  } catch (err) {
-    return {
-      error: err instanceof Error ? err.message : "Tool execution failed",
-      content: undefined,
-    };
-  }
-}
-
-/**
- * Load all enabled tools for a model request.
- * Returns a tool set compatible with the AI SDK's `tools` parameter,
- * and a closeAll function for cleanup.
+ * Builds the tool set for one request. `webSearchEnabled` comes from the
+ * client's composer toggle. `closeAll` releases any connections opened
+ * while loading; always safe to call.
  */
 export async function loadTools(
-  webSearchEnabled = true
+  webSearchEnabled = true,
 ): Promise<{
-  tools: Record<string, any>;
+  tools: ToolSet;
   closeAll: () => Promise<void>;
-  enabledTools: ToolMeta[];
 }> {
-  const tools: Record<string, any> = {};
-  const enabled = enabledTools();
+  const tools: ToolSet = {};
 
-  for (const toolMeta of enabled) {
-    const implementation = IMPLEMENTATIONS[toolMeta.name];
-    if (implementation) {
-      tools[toolMeta.name] = implementation;
-    }
+  for (const { name } of enabledTools()) {
+    const implementation = IMPLEMENTATIONS[name];
+    if (implementation) tools[name] = implementation;
   }
+
+  if (!webSearchEnabled) delete tools["web-search"];
 
   return {
     tools,
     closeAll: async () => {},
-    enabledTools: enabled,
   };
-}
-
-/**
- * Check if a tool is enabled in the registry.
- */
-export function isToolEnabled(name: string): boolean {
-  return TOOL_REGISTRY.some((t) => t.name === name && t.enabled);
 }

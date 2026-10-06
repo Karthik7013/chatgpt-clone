@@ -8,7 +8,8 @@ import {
 
 import { createModel } from "@/lib/providers/factory";
 import { DEFAULT_MODEL_ID } from "@/lib/providers/provider-config";
-import { loadTools } from "@/lib/tools/server";
+import { apiError } from "@/lib/api-response";
+import { loadTools } from "@/lib/tools/tool-registry";
 import { MAX_STEPS, SYSTEM_PROMPT } from "@/lib/tools/system-prompt";
 import { readChatRequest } from "@/lib/tools/read-chat-request";
 import {
@@ -55,11 +56,10 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[api/chat] failed to start stream:", message);
     if (message.includes("Unknown provider") || message.includes("API key not configured")) {
-      return Response.json({ error: message }, { status: 400 });
+      return apiError("api/chat", message, 400);
     }
-    return Response.json({ error: "Failed to generate response" }, { status: 500 });
+    return apiError("api/chat", "Failed to generate response", 500, err);
   }
 
   return createUIMessageStreamResponse({

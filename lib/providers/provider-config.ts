@@ -78,7 +78,9 @@ export const PROVIDER_ENV_KEYS: Record<string, string> = PROVIDERS.reduce(
 );
 
 /**
- * Get the environment variable name for a provider's API key.
+ * Get the environment variable NAME holding a provider's API key
+ * (e.g. "OPENROUTER_API_KEY"). Resolve the value with `process.env[name]`;
+ * see `isProviderConfigured` and `lib/providers/factory.ts`.
  */
 export function getProviderKey(providerId: string): string | undefined {
   return PROVIDER_ENV_KEYS[providerId];

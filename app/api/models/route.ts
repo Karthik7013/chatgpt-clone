@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { getConfiguredProviders } from "@/lib/providers/provider-config";
 
 export async function GET() {
@@ -9,9 +8,9 @@ export async function GET() {
       models: p.models,
     }));
 
-    return NextResponse.json({ providers: available });
+    return Response.json({ providers: available });
   } catch (err) {
-    console.error("Failed to fetch providers:", err);
-    return NextResponse.json({ providers: [] });
+    console.error("[api/models] Failed to fetch providers:", err);
+    return Response.json({ providers: [] });
   }
 }

@@ -1,5 +1,6 @@
 import type { UIMessage } from "ai";
 import { loadMessages, saveMessages } from "@/lib/server/chat-repository";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const runtime = "nodejs";
 
@@ -11,10 +12,9 @@ export async function GET(
 ) {
   const { chatId } = await params;
   try {
-    return Response.json(await loadMessages(chatId));
+    return apiOk(await loadMessages(chatId));
   } catch (err) {
-    console.error(`[api/chats] GET ${chatId}/messages failed:`, err);
-    return Response.json({ error: "Failed to load messages." }, { status: 500 });
+    return apiError("api/chats", "Failed to load messages.", 500, err);
   }
 }
 
@@ -26,19 +26,15 @@ export async function PUT(
   try {
     const body: unknown = await req.json();
     if (!Array.isArray(body)) {
-      return Response.json(
-        { error: "Body must be a messages array." },
-        { status: 400 },
-      );
+      return apiError("api/chats", "Body must be a messages array.", 400);
     }
     if (body.length > MAX_MESSAGES) {
-      return Response.json({ error: "Too many messages." }, { status: 400 });
+      return apiError("api/chats", "Too many messages.", 400);
     }
     const messages = body as UIMessage[];
     await saveMessages(chatId, messages);
-    return Response.json({ ok: true });
+    return apiOk({ ok: true });
   } catch (err) {
-    console.error(`[api/chats] PUT ${chatId}/messages failed:`, err);
-    return Response.json({ error: "Failed to save messages." }, { status: 500 });
+    return apiError("api/chats", "Failed to save messages.", 500, err);
   }
 }

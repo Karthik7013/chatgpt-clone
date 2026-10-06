@@ -1,21 +1,20 @@
 import { createChat, listChats } from "@/lib/server/chat-repository";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    return Response.json(await listChats());
+    return apiOk(await listChats());
   } catch (err) {
-    console.error("[api/chats] GET failed:", err);
-    return Response.json({ error: "Failed to load chats." }, { status: 500 });
+    return apiError("api/chats", "Failed to load chats.", 500, err);
   }
 }
 
 export async function POST() {
   try {
-    return Response.json(await createChat(), { status: 201 });
+    return apiOk(await createChat(), 201);
   } catch (err) {
-    console.error("[api/chats] POST failed:", err);
-    return Response.json({ error: "Failed to create chat." }, { status: 500 });
+    return apiError("api/chats", "Failed to create chat.", 500, err);
   }
 }
