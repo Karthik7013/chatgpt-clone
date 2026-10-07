@@ -67,7 +67,9 @@ export async function updateChatTitle(
 export async function deleteChat(id: string): Promise<void> {
   const db = await getDb();
   await db.collection<ChatDoc>("chats").deleteOne({ _id: id });
-  await db.collection<MessageDoc>("messages").deleteOne({ _id: id });
+  // One document per chat holds the whole message list (see saveMessages),
+  // so deleteMany is belt-and-braces against a future schema change.
+  await db.collection<MessageDoc>("messages").deleteMany({ _id: id });
 }
 
 export async function loadMessages(id: string): Promise<UIMessage[]> {

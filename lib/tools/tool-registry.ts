@@ -11,24 +11,9 @@ import {
  * Server-only unified tool registry: metadata, AI SDK implementations, and
  * loading helpers in one place. Imported only from API routes (via
  * `@/lib/tools/tool-registry`), never from client components.
- */
-export type ToolMeta = {
-  /** Key passed to `streamText`, and looked up in the tool-card registry. */
-  name: string;
-  /** Human-readable name shown in the UI. */
-  label: string;
-  /**
-   * Disabled tools are fully written and type-checked, but are not offered to
-   * the model. Flip this to `true` to switch one on — no other change needed.
-   */
-  enabled: boolean;
-};
-
-/**
- * Tool implementations, keyed by the name the model sees. Whether a tool is
- * actually offered is decided by `enabled` in `TOOL_REGISTRY` below — this is
- * the implementation lookup only. Client tool cards key off `name`
- * independently (see `components/tool-cards/registry.tsx`).
+ *
+ * Client tool cards key off `name` independently
+ * (see `components/tool-cards/registry.tsx`).
  */
 export const getTimeTool = tool({
   description:
@@ -192,57 +177,37 @@ export const webFetchTool = tool({  description:
 });
 
 /**
- * Unified tool registry - contains both metadata AND implementations.
- * Tools the model is currently allowed to call.
+ * Every tool the model may call: metadata for the UI plus the AI SDK
+ * implementation, in one list. To add a tool, append one entry here and,
+ * optionally, a card in `components/tool-cards/registry.tsx` (a tool with
+ * no card falls back to the generic renderer).
  */
-export const TOOL_REGISTRY: ToolMeta[] = [
-  { name: "get-time", label: "Time", enabled: true },
-  { name: "web-search", label: "Search", enabled: true },
-  { name: "web-fetch", label: "Fetch", enabled: true },
-
-  // Implemented but switched off. Flip `enabled` to `true` to switch one on.
-  { name: "weather", label: "Weather", enabled: false },
-  { name: "generate-file", label: "File", enabled: false },
-  { name: "generate-files", label: "Files", enabled: false },
-  { name: "qr-code", label: "QR code", enabled: false },
+const TOOLS: { name: string; label: string; tool: ToolSet[string] }[] = [
+  { name: "get-time", label: "Time", tool: getTimeTool },
+  { name: "web-search", label: "Search", tool: webSearchTool },
+  { name: "web-fetch", label: "Fetch", tool: webFetchTool },
 ];
 
-/** Tools the model is currently allowed to call. */
-export function enabledTools(): ToolMeta[] {
-  return TOOL_REGISTRY.filter((tool) => tool.enabled);
-}
+/** Tools offered to the model, keyed by the name the model sees. */
+export type ToolMeta = { name: string; label: string };
 
-/** Map of tool names to their AI SDK tool implementations. Only live tools
- * are listed here; `loadTools` only offers `enabled` tools, so there is
- * nothing to keep in sync when flipping a tool on or off. */
-const IMPLEMENTATIONS: Record<string, ToolSet[string]> = {
-  "get-time": getTimeTool,
-  "web-search": webSearchTool,
-  "web-fetch": webFetchTool,
-};
+export function enabledTools(): ToolMeta[] {
+  return TOOLS.map(({ name, label }) => ({ name, label }));
+}
 
 /**
  * Builds the tool set for one request. `webSearchEnabled` comes from the
- * client's composer toggle. `closeAll` releases any connections opened
- * while loading; always safe to call.
+ * client's composer toggle and gates both web tools.
  */
-export async function loadTools(
-  webSearchEnabled = true,
-): Promise<{
-  tools: ToolSet;
-  closeAll: () => Promise<void>;
-}> {
+export function loadTools(webSearchEnabled = true): { tools: ToolSet } {
   const tools: ToolSet = {};
 
-  for (const { name } of enabledTools()) {
-    const implementation = IMPLEMENTATIONS[name];
-    if (implementation) tools[name] = implementation;
+  for (const { name, tool } of TOOLS) {
+    if (!webSearchEnabled && (name === "web-search" || name === "web-fetch")) {
+      continue;
+    }
+    tools[name] = tool;
   }
 
-  if (!webSearchEnabled) delete tools["web-search"];
-
-  return {
-    tools,
-    closeAll: async () => {},
-  };
+  return { tools };
 }

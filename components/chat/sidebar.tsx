@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import type { ChatSummary } from "@/lib/chat-store";
+import { renameTitle } from "@/lib/chat-store";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
@@ -164,8 +165,8 @@ function ChatListItem({
 
   function commitRename() {
     setEditing(false);
-    const trimmed = draft.trim();
-    if (trimmed && trimmed !== chat.title) onRename(trimmed);
+    const next = renameTitle(draft, chat.title);
+    if (next) onRename(next);
     else setDraft(chat.title);
   }
 

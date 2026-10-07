@@ -5,6 +5,7 @@ import { CircleAlert, Loader2 } from "lucide-react";
 import { ChatSidebar } from "@/components/chat/sidebar";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatWindow } from "@/components/chat/window";
+import { ErrorBanner } from "@/components/chat/error-banner";
 import { useChats } from "@/components/chat/use-chats";
 import {
   SidebarInset,
@@ -21,7 +22,6 @@ export function ChatApp({ initialChatId }: { initialChatId?: string } = {}) {
     chats,
     activeChatId,
     activeTitle,
-    activeChatNonEmpty,
     ready,
     storageError,
     dismissStorageError,
@@ -54,7 +54,6 @@ export function ChatApp({ initialChatId }: { initialChatId?: string } = {}) {
           <div className="flex flex-1 flex-col overflow-hidden">
             <ChatHeader
               title={activeTitle}
-              showOptions={activeChatNonEmpty}
               onRename={(title) => void renameChatById(activeChatId, title)}
               onDelete={() => {
                 if (window.confirm(`Delete "${activeTitle}"?`)) {
@@ -64,9 +63,7 @@ export function ChatApp({ initialChatId }: { initialChatId?: string } = {}) {
             />
 
             {storageError ? (
-              <div className="flex items-center gap-2 border border-danger/30 bg-danger/10 px-4 py-2 text-xs text-danger">
-                <CircleAlert className="size-3.5 shrink-0" />
-                <span className="flex-1">{storageError}</span>
+              <ErrorBanner message={storageError} className="mx-4 mt-2">
                 <button
                   type="button"
                   onClick={dismissStorageError}
@@ -74,7 +71,7 @@ export function ChatApp({ initialChatId }: { initialChatId?: string } = {}) {
                 >
                   Dismiss
                 </button>
-              </div>
+              </ErrorBanner>
             ) : null}
 
             <div className="flex flex-1 flex-col overflow-hidden">

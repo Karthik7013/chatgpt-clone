@@ -6,11 +6,9 @@ import type { UIMessage } from "ai";
 import {
   createChat,
   deleteChat,
-  listChats,
   loadMessages,
   renameChat,
   titleFromMessage,
-  touchChat,
   type ChatSummary,
 } from "@/lib/chat-store";
 import { dedupeById } from "@/lib/chat-list";
@@ -25,20 +23,18 @@ import { CHAT_ERROR } from "@/components/chat/chat-errors";
  * these failures (an unreachable database) should leave the app usable.
  */
 export function useChatActions({
+  chats,
   activeChatId,
   setChats,
   setActiveChatId,
   setStorageError,
 }: {
+  chats: ChatSummary[];
   activeChatId: string | null;
   setChats: React.Dispatch<React.SetStateAction<ChatSummary[]>>;
   setActiveChatId: React.Dispatch<React.SetStateAction<string | null>>;
   setStorageError: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
-  async function refreshChats() {
-    setChats(dedupeById(await listChats()));
-  }
-
   /** Opens a chat and records it in history so Back returns to the previous one. */
   function selectChat(id: string) {
     // Re-selecting the open chat must not stack up history entries.
@@ -62,7 +58,7 @@ export function useChatActions({
 
     try {
       const chat = await createChat();
-      await refreshChats();
+      setChats((prev) => dedupeById([chat, ...prev]));
       setActiveChatId(chat.id);
       writeChatUrl(chat.id, "push");
     } catch (err) {
@@ -74,7 +70,11 @@ export function useChatActions({
   async function renameChatById(id: string, title: string) {
     try {
       await renameChat(id, title);
-      await refreshChats();
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === id ? { ...chat, title, updatedAt: Date.now() } : chat,
+        ),
+      );
     } catch (err) {
       console.error("Failed to rename chat:", err);
       setStorageError(CHAT_ERROR.rename);
@@ -84,18 +84,16 @@ export function useChatActions({
   async function deleteChatById(id: string) {
     try {
       await deleteChat(id);
-      const remaining = dedupeById(
-        (await listChats()).filter((chat) => chat.id !== id),
-      );
 
       if (id !== activeChatId) {
-        setChats(remaining);
+        setChats((prev) => prev.filter((chat) => chat.id !== id));
         return;
       }
 
       // The open chat was deleted, so move to another one, creating a fresh
       // chat if that was the last one. Replacing the URL keeps the deleted
       // chat's id out of the history, where it could only 404.
+      const remaining = chats.filter((chat) => chat.id !== id);
       if (remaining.length > 0) {
         setChats(remaining);
         setActiveChatId(remaining[0].id);
@@ -115,8 +113,13 @@ export function useChatActions({
   /** Names the chat after its first user message, so the sidebar is readable. */
   async function nameFromFirstMessage(id: string, message: UIMessage) {
     try {
-      await touchChat(id, titleFromMessage(message));
-      await refreshChats();
+      const title = titleFromMessage(message);
+      await renameChat(id, title);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === id ? { ...chat, title, updatedAt: Date.now() } : chat,
+        ),
+      );
     } catch (err) {
       console.error("Failed to update chat:", err);
       setStorageError(CHAT_ERROR.renameFromMessage);

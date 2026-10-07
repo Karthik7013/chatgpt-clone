@@ -30,33 +30,26 @@ export async function POST(req: Request) {
 
   // A bad model id or missing API key is the client's fault, not ours.
   let result: ReturnType<typeof streamText>;
-  let closeAll: () => Promise<void>;
   try {
     const messagesWithFiles = await attachFileContents(messages);
     const modelMessages = await convertToModelMessages(
       withoutFileParts(messagesWithFiles),
     );
-    const loaded = await loadTools(!!webSearchEnabled);
-    closeAll = loaded.closeAll;
+    const { tools } = loadTools(!!webSearchEnabled);
 
     result = streamText({
       model: createModel(selectedModel),
       system: SYSTEM_PROMPT,
       messages: modelMessages,
-      tools: loaded.tools,
+      tools,
       stopWhen: stepCountIs(MAX_STEPS),
       onError: ({ error }) => {
         console.error("[api/chat] stream error:", error);
-        // A failed stream may never reach onFinish, so release here too.
-        void closeAll();
       },
-      // Release MCP connections on every exit path, including client aborts.
-      onFinish: () => closeAll(),
-      onAbort: () => closeAll(),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("Unknown provider") || message.includes("API key not configured")) {
+    if (message.includes("Unknown provider") || message.includes("API key not configured") || message.includes("No free models configured")) {
       return apiError("api/chat", message, 400);
     }
     return apiError("api/chat", "Failed to generate response", 500, err);

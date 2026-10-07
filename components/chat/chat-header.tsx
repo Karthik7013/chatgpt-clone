@@ -10,23 +10,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { renameTitle } from "@/lib/chat-store";
 
 /**
  * The bar above the conversation: sidebar toggle, the chat's title, and the
  * options menu. The title becomes an input while renaming; that draft is local
  * state because nothing else needs to see it until it is committed.
- *
- * The options menu is hidden for an empty chat, where rename and delete have
- * nothing to act on.
  */
 export function ChatHeader({
   title,
-  showOptions,
   onRename,
   onDelete,
 }: {
   title: string;
-  showOptions: boolean;
   onRename: (title: string) => void;
   onDelete: () => void;
 }) {
@@ -40,8 +36,8 @@ export function ChatHeader({
 
   function commitRename() {
     setIsRenaming(false);
-    const trimmed = draft.trim();
-    if (trimmed && trimmed !== title) onRename(trimmed);
+    const next = renameTitle(draft, title);
+    if (next) onRename(next);
   }
 
   return (
@@ -67,8 +63,7 @@ export function ChatHeader({
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        {showOptions ? (
-          <DropdownMenu>
+        <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
@@ -87,7 +82,6 @@ export function ChatHeader({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : null}
       </div>
     </header>
   );

@@ -16,6 +16,7 @@ import { EmptyHome } from "@/components/ai-elements/empty-home";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { ChatComposer } from "@/components/chat/chat-composer";
+import { ErrorBanner } from "@/components/chat/error-banner";
 import { useAttachmentUpload } from "@/components/chat/use-attachment-upload";
 import {
   useAutosaveMessages,
@@ -136,6 +137,17 @@ function ChatSession({
 
   return (
     <div className="flex h-full flex-col">
+      {loadFailed ? (
+        <ErrorBanner message="Couldn't load saved messages. History may be missing, and new messages won't be saved." className="mx-6 mt-3">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="shrink-0 rounded hover:underline"
+          >
+            Reload
+          </button>
+        </ErrorBanner>
+      ) : null}
         <Conversation scrollKey={lastUserMessageId ?? "empty"}>
           <ConversationContent className="px-6">
             {messages.length === 0 ? (
@@ -181,19 +193,22 @@ function ChatSession({
         onStop={stop}
         status={status}
         isBusy={isBusy}
-        files={upload.files}
-        onRemoveFile={upload.remove}
-        uploading={upload.uploading}
-        onFilesChosen={(event) => void upload.uploadSelected(event.target.files)}
-        openFilePicker={upload.openFilePicker}
-        fileInputRef={upload.inputRef}
-        model={model}
-        onModelChange={setModel}
-        webSearchEnabled={webSearchEnabled}
-        onToggleWebSearch={() => setWebSearchEnabled((prev) => !prev)}
-        saveError={saveError}
-        onDismissSaveError={dismissSaveError}
-        uploadError={upload.error}
+        upload={{
+          files: upload.files,
+          onRemoveFile: upload.remove,
+          uploading: upload.uploading,
+          onFilesChosen: (event) => void upload.uploadSelected(event.target.files),
+          openFilePicker: upload.openFilePicker,
+          fileInputRef: upload.inputRef,
+          error: upload.error,
+        }}
+        model={{
+          id: model,
+          onChange: setModel,
+          webSearchEnabled,
+          onToggleWebSearch: () => setWebSearchEnabled((prev) => !prev),
+        }}
+        save={{ error: saveError, onDismiss: dismissSaveError }}
       />
     </div>
   );

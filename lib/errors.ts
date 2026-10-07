@@ -1,10 +1,14 @@
 /**
- * Turns a raw error from the model provider into something worth showing a
- * user. Providers report failures as free-form strings, so we match on
- * substrings rather than error types.
+ * Turns a raw error into something worth showing a user. Providers report
+ * failures as free-form strings, so we match on substrings rather than
+ * error types.
  *
- * Shared by the server (`app/api/chat/route.ts`) and the client
- * (`components/chat`) so both sides agree on what a given failure means.
+ * Never echoes raw text: unknown failures collapse to a generic message so
+ * server-side details (keys, URLs, account ids) don't leak to the browser.
+ * Only well-understood, user-actionable failures get a specific message.
+ *
+ * Used by the client (`components/chat/window.tsx`); the stream-chunk path
+ * uses `streamErrorMessage` below instead.
  */
 export function friendlyError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -12,11 +16,20 @@ export function friendlyError(error: unknown): string {
   if (message.includes("429") || message.includes("rate_limit") || message.includes("quota")) {
     return "Rate limit exceeded. Try a different model or wait a moment.";
   }
-  if (message.includes("PERMISSION_DENIED") || message.includes("403")) {
+  if (
+    message.includes("API key not configured") ||
+    message.includes("PERMISSION_DENIED") ||
+    message.includes("403")
+  ) {
     return "API key error. Check your provider API key in .env.local.";
   }
-  if (message.includes("INVALID_ARGUMENT") || message.includes("400")) {
-    return "Invalid request. The prompt or file may be too large.";
+  if (
+    message.includes("Unknown provider") ||
+    message.includes("Unknown model") ||
+    message.includes("INVALID_ARGUMENT") ||
+    message.includes("400")
+  ) {
+    return "Invalid request. Try another model, or a shorter prompt or smaller file.";
   }
   if (message.includes("UNAVAILABLE") || message.includes("503")) {
     return "Service temporarily unavailable. Try again later.";
@@ -24,17 +37,15 @@ export function friendlyError(error: unknown): string {
   if (message.includes("deadline_exceeded") || message.includes("504")) {
     return "Request timed out. Try a shorter prompt or smaller file.";
   }
-  return message || "Something went wrong. Try again.";
+  return "Something went wrong. Try again.";
 }
 
 /**
  * Safe message for stream `error` chunks, used as
  * `toUIMessageStream({ onError: streamErrorMessage })`.
  *
- * Unlike `friendlyError`, this never echoes raw provider text: unknown
- * failures collapse to a generic message so server-side details (keys,
- * URLs, account ids) don't leak to the browser. Only well-understood,
- * user-actionable failures get a specific message.
+ * Same no-raw-text contract as `friendlyError`, but for the streaming path:
+ * only well-understood, user-actionable failures get a specific message.
  */
 export function streamErrorMessage(error: unknown): string {
   if (isRateLimitError(error)) {

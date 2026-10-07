@@ -12,9 +12,10 @@ const AUTOSAVE_DEBOUNCE_MS = 800;
  *
  * `null` messages means "still loading", which the caller renders as a
  * spinner. A load failure resolves to an empty list and sets `loadFailed`, so
- * a broken database shows a usable empty chat instead of a spinner forever.
- * Saving is skipped entirely in that case, which stops an empty chat from
- * overwriting history that failed to load.
+ * a broken database shows a usable empty chat with a banner (rendered by the
+ * caller) instead of a spinner forever. Saving is skipped entirely in that
+ * case, which stops an empty chat from overwriting history that failed to
+ * load.
  */
 export function usePersistedMessages(chatId: string): {
   messages: UIMessage[] | null;

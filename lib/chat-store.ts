@@ -44,16 +44,12 @@ export async function createChat(): Promise<ChatSummary> {
   });
 }
 
-export async function touchChat(id: string, title?: string): Promise<void> {
+export async function renameChat(id: string, title: string): Promise<void> {
   await request<unknown>(`/api/chats/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: JSON_HEADERS,
-    body: JSON.stringify(title ? { title } : {}),
+    body: JSON.stringify({ title }),
   });
-}
-
-export async function renameChat(id: string, title: string): Promise<void> {
-  await touchChat(id, title);
 }
 
 export async function deleteChat(id: string): Promise<void> {
@@ -88,4 +84,10 @@ export function titleFromMessage(message: UIMessage): string {
     .trim();
   if (!text) return "New chat";
   return text.length > 48 ? `${text.slice(0, 48)}…` : text;
+}
+
+/** Trims a rename draft. Returns the new title, or null when empty/unchanged. */
+export function renameTitle(draft: string, current: string): string | null {
+  const trimmed = draft.trim();
+  return trimmed && trimmed !== current ? trimmed : null;
 }

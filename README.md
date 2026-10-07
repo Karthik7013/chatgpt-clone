@@ -65,37 +65,34 @@ is its own module under `lib/`.
 | File | Responsibility |
 |---|---|
 | `app.tsx` | Layout: which screen to show, and wiring. |
-| `use-chats.ts` | Orchestrator: chat-list state, composed from the hooks below. |
-| `use-chat-bootstrap.ts` | One-time load and first-chat decision. |
-| `use-active-chat-emptiness.ts` | Whether the open chat has messages. |
-| `use-chat-history.ts` | Back/Forward navigation between chats. |
+| `use-chats.ts` | Chat-list state: bootstrap, history navigation, actions. |
 | `use-chat-actions.ts` | Open, create, rename, delete, name-from-first-message. |
 | `chat-header.tsx` | Title bar and its rename draft. |
 | `sidebar.tsx` | The chat list. |
 | `window.tsx` | The live conversation. |
-| `message-bubble.tsx` | One message and its parts. |
+| `message-bubble.tsx` | One message: layout plus its copy button. |
+| `message-parts.tsx` | Per-part dispatch, attachments, source chips. |
+| `tool-part.tsx` | Tool result: rich card or generic fallback. |
+| `error-banner.tsx` | Shared danger banner. |
 | `chat-composer.tsx` | The input box and toolbar. |
 | `use-attachment-upload.ts` | Uploading and the pending file list. |
 | `use-persisted-messages.ts` | Loading and debounced saving. |
-| `use-copy-button.ts` | Clipboard with timer cleanup. |
 
 ## Tools
 
 A tool is added in two places. The registry is the switchboard.
 
-1. **Implement and register it** — add the `tool({...})` and a `TOOL_REGISTRY`
-   entry with `enabled: true` in `lib/tools/tool-registry.ts`.
+1. **Implement and register it** — add the `tool({...})` and one entry in
+   `TOOLS` in `lib/tools/tool-registry.ts`.
 2. **Optionally give it a card** — add `components/tool-cards/<name>-card.tsx` and one
    line to `TOOL_CARDS` in `components/tool-cards/registry.tsx`.
 
 A tool with no card still works: the UI falls back to a generic collapsible block that
-shows its input and output. Four names (`weather`, `generate-file`, `generate-files`,
-`qr-code`) sit switched off in the registry as placeholders; they have cards but no
-server implementation, so flipping `enabled` on one requires writing its `tool({...})`
-in the registry first.
+shows its input and output.
 
 Web search is also gated at request time by the toggle in the composer, which sends
-`webSearchEnabled` in the request body.
+`webSearchEnabled` in the request body. The toggle gates both `web-search` and
+`web-fetch`.
 
 `lib/tools/tool-registry.ts` is server-only: it imports `ai` and `zod`, so never
 import it from client components. Client tool cards key off the tool `name`
@@ -103,7 +100,7 @@ independently.
 
 ## Adding a model provider
 
-Providers live in `lib/providers/`. `config.ts` holds the id, label and env var for each;
+Providers live in `lib/providers/`. `provider-config.ts` holds the id, label and env var for each;
 `factory.ts` turns an id like `kilo:kilo-auto/free` into a model. The model picker in the
 composer reads from `/api/models`, which lists whatever the configured providers expose.
 
@@ -123,7 +120,7 @@ functions are pure and worth covering first, roughly in this order:
 3. `titleFromMessage` in `lib/chat-store.ts`
 4. model id parsing in `lib/providers/factory.ts`
 5. `extractTextFromHtml` in `lib/tools/html-to-text.ts`
-6. a test that `TOOL_REGISTRY` has no duplicate names
+6. a test that `TOOLS` in `lib/tools/tool-registry.ts` has no duplicate names
 
 ## Notes
 
@@ -131,4 +128,4 @@ functions are pure and worth covering first, roughly in this order:
   running `npx ai-elements@latest add` later can replace it. Treat it as vendored.
 - Two ESLint rules are disabled for `components/ui/**` and `components/ai-elements/**`
   only. The rest of the codebase is expected to lint clean.
-- There is no MCP integration. The self-hosted demo at `app/api/[transport]/route.ts` is still served, but nothing connects the chat route to an MCP server.
+- There is no MCP integration.

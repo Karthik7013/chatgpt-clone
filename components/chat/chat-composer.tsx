@@ -2,7 +2,7 @@
 
 import type * as React from "react";
 import type { ChatStatus } from "ai";
-import { CircleAlert, Globe } from "lucide-react";
+import { Globe } from "lucide-react";
 
 import {
   PromptInput,
@@ -13,7 +13,30 @@ import {
   PromptInputAttachmentsDisplay,
 } from "@/components/ai-elements/prompt-input";
 import { ModelSelector } from "@/components/model-selector";
+import { ErrorBanner } from "@/components/chat/error-banner";
 import type { PendingFile } from "@/components/chat/use-attachment-upload";
+
+export type ComposerUpload = {
+  files: PendingFile[];
+  onRemoveFile: (id: string) => void;
+  uploading: boolean;
+  onFilesChosen: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  openFilePicker: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  error: string | null;
+};
+
+export type ComposerModel = {
+  id: string;
+  onChange: (model: string) => void;
+  webSearchEnabled: boolean;
+  onToggleWebSearch: () => void;
+};
+
+export type ComposerSave = {
+  error: string | null;
+  onDismiss: () => void;
+};
 
 /** The message box, its toolbar, and the banners that sit just above it. */
 export function ChatComposer({
@@ -22,53 +45,46 @@ export function ChatComposer({
   onSubmit,
   onStop,
   status,
-  files,
-  onRemoveFile,
-  uploading,
-  onFilesChosen,
-  openFilePicker,
-  fileInputRef,
-  model,
-  onModelChange,
-  webSearchEnabled,
-  onToggleWebSearch,
-  saveError,
-  onDismissSaveError,
-  uploadError,
   isBusy,
+  upload: {
+    files,
+    onRemoveFile,
+    uploading,
+    onFilesChosen,
+    openFilePicker,
+    fileInputRef,
+    error: uploadError,
+  },
+  model: {
+    id: modelId,
+    onChange: onModelChange,
+    webSearchEnabled,
+    onToggleWebSearch,
+  },
+  save: { error: saveError, onDismiss: onDismissSaveError },
 }: {
   input: string;
   onInputChange: (value: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onStop: () => void;
   status: ChatStatus;
-  files: PendingFile[];
-  onRemoveFile: (id: string) => void;
-  uploading: boolean;
-  onFilesChosen: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  openFilePicker: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  model: string;
-  onModelChange: (model: string) => void;
-  webSearchEnabled: boolean;
-  onToggleWebSearch: () => void;
-  saveError: string | null;
-  onDismissSaveError: () => void;
-  uploadError: string | null;
   isBusy: boolean;
+  upload: ComposerUpload;
+  model: ComposerModel;
+  save: ComposerSave;
 }) {
   const nothingToSend = input.trim() === "" && files.length === 0;
 
   return (
     <div className="mx-auto w-full max-w-3xl bg-background px-2 md:px-0">
       {saveError ? (
-        <ErrorBanner message={saveError}>
+        <ErrorBanner message={saveError} className="mt-2">
           <button type="button" onClick={onDismissSaveError} className="rounded hover:underline">
             Dismiss
           </button>
         </ErrorBanner>
       ) : null}
-      {uploadError ? <ErrorBanner message={uploadError} /> : null}
+      {uploadError ? <ErrorBanner message={uploadError} className="mt-2" /> : null}
 
       {/* Kept outside PromptInput so it is never submitted as a form value. */}
       <input
@@ -99,7 +115,7 @@ export function ChatComposer({
             >
               <Globe className="size-4" />
             </button>
-            <ModelSelector model={model} onModelChange={onModelChange} />
+            <ModelSelector model={modelId} onModelChange={onModelChange} />
           </div>
           <PromptInputSubmit
             status={status}
@@ -109,22 +125,6 @@ export function ChatComposer({
         </PromptInputToolbar>
       </PromptInput>
       <div className="h-3"></div>
-    </div>
-  );
-}
-
-function ErrorBanner({
-  message,
-  children,
-}: {
-  message: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="mt-2 flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-      <CircleAlert className="size-3.5 shrink-0" />
-      <span className="flex-1">{message}</span>
-      {children}
     </div>
   );
 }

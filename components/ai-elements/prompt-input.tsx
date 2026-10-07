@@ -132,69 +132,6 @@ export function PromptInputSubmit({
   );
 }
 
-// ============================================================================
-// File Upload
-// ============================================================================
-
-export interface UsePromptInputAttachmentsOptions {
-  maxFiles?: number;
-  maxFileSize?: number;
-  accept?: string;
-  onFilesChange?: (files: (FileUIPart & { id: string })[]) => void;
-}
-
-export function usePromptInputAttachments(options: UsePromptInputAttachmentsOptions = {}) {
-  const { maxFiles = 10, maxFileSize = 50 * 1024 * 1024, accept, onFilesChange } = options;
-  const [files, setFiles] = React.useState<(FileUIPart & { id: string })[]>([]);
-  const [uploading, setUploading] = React.useState<boolean>(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-
-  const add = React.useCallback(
-    (newFiles: (FileUIPart & { id: string })[]) => {
-      setFiles((prev) => {
-        const next = [...prev, ...newFiles].slice(0, maxFiles);
-        onFilesChange?.(next);
-        return next;
-      });
-    },
-    [maxFiles, onFilesChange]
-  );
-
-  const remove = React.useCallback(
-    (id: string) => {
-      setFiles((prev) => {
-        const next = prev.filter((f) => f.id !== id);
-        onFilesChange?.(next);
-        return next;
-      });
-    },
-    [onFilesChange]
-  );
-
-  const clear = React.useCallback(() => {
-    setFiles([]);
-    onFilesChange?.([]);
-  }, [onFilesChange]);
-
-  const openFileDialog = React.useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  return {
-    files,
-    uploading,
-    setUploading,
-    add,
-    remove,
-    clear,
-    openFileDialog,
-    fileInputRef,
-    maxFiles,
-    maxFileSize,
-    accept,
-  };
-}
-
 export interface PromptInputAttachButtonProps {
   onClick?: () => void;
   disabled?: boolean;
