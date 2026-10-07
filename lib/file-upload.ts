@@ -1,19 +1,10 @@
+import { getFileExtension, isIngestibleFile } from "@/lib/file-types";
+
 const WORKER_URL = "https://ia-upload.karthiktumala143.workers.dev/";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
-const ALLOWED_EXTENSIONS = [".pdf", ".txt", ".docx", ".csv", ".tsx", ".ts", ".js", ".jsx", ".json", ".md", ".xml", ".html", ".css", ".py", ".java", ".c", ".cpp", ".rb", ".go", ".rs", ".sql", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".log", ".rtf", ".odt", ".ods", ".epub"];
-
-function getFileExtension(filename: string): string {
-  const idx = filename.lastIndexOf(".");
-  return idx >= 0 ? filename.slice(idx).toLowerCase() : "";
-}
-
 function isTextFile(file: File): boolean {
-  if (file.type.startsWith("text/")) return true;
-  if (file.type === "application/json") return true;
-  if (file.type === "application/xml") return true;
-  const ext = getFileExtension(file.name);
-  return ALLOWED_EXTENSIONS.includes(ext);
+  return isIngestibleFile(file.type, file.name);
 }
 
 function getMediaType(file: File): string {
@@ -57,7 +48,7 @@ export function validateFile(file: File): string | null {
     return `File size exceeds 50 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
   }
   if (!isTextFile(file)) {
-    return `File type "${file.type || getFileExtension(file.name) || "unknown"}" is not supported. Allowed: text-based files (PDF, TXT, DOCX, CSV, code files, etc.)`;
+    return `File type "${file.type || getFileExtension(file.name) || "unknown"}" is not supported. Allowed: text files (TXT, MD, CSV, JSON, code files, etc.). PDF/DOCX reading is not yet supported — paste the text instead.`;
   }
   return null;
 }

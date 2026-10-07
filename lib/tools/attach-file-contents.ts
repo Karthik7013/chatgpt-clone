@@ -15,9 +15,10 @@ function filePartsOf(message: UIMessage): PendingFilePart[] {
  * Inlines the text content of every attached file into the user message that
  * carries it, so the model sees the file text rather than just a URL.
  *
- * Files that are not text-readable (images, audio) are left as file parts and
- * dropped before conversion to model messages. Runs per message in parallel
- * and never throws: an unreadable file becomes a placeholder line.
+ * Runs per message in parallel and never throws: an unreadable file becomes
+ * a placeholder line. When nothing was ingestible (e.g. legacy PDF parts
+ * from before upload validation), a skip notice is inlined so the model
+ * sees the attachment existed instead of it vanishing silently.
  */
 export async function attachFileContents(
   messages: UIMessage[],
@@ -37,7 +38,20 @@ export async function attachFileContents(
           mediaType: file.mediaType,
         })),
       );
-      if (contents.length === 0) return message;
+      if (contents.length === 0) {
+        const skipped = files.map((f) => f.filename ?? "attachment").join(", ");
+        const textParts = message.parts.filter((part) => part.type === "text");
+        return {
+          ...message,
+          parts: [
+            ...textParts,
+            {
+              type: "text" as const,
+              text: `[Attached files could not be read as text and were skipped: ${skipped}]`,
+            },
+          ],
+        };
+      }
 
       const textParts = message.parts.filter((part) => part.type === "text");
       return {

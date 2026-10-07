@@ -1,29 +1,8 @@
+import { isIngestibleFile } from "@/lib/file-types";
+
 const MAX_CONTENT_BYTES = 50 * 1024; // 50 KB
 
-const TEXT_MIME_TYPES = new Set([
-  "text/",
-  "application/json",
-  "application/xml",
-  "application/javascript",
-  "application/x-javascript",
-  "application/typescript",
-  "application/x-yaml",
-  "application/yaml",
-  "application/x-tex",
-  "application/x-latex",
-  "application/x-sh",
-  "application/x-shellscript",
-  "application/sql",
-  "application/toml",
-  "application/csv",
-]);
-
-export function isTextReadable(mediaType?: string): boolean {
-  if (!mediaType) return false;
-  const lower = mediaType.toLowerCase();
-  if (lower.startsWith("text/")) return true;
-  return TEXT_MIME_TYPES.has(lower);
-}
+export { isIngestibleFile as isTextReadable };
 
 export async function fetchTextContent(url: string): Promise<string> {
   const res = await fetch(url);
@@ -49,24 +28,14 @@ export interface FileAttachment {
 export async function fetchAllFileContents(
   files: FileAttachment[],
 ): Promise<string[]> {
-  console.log("🔍 [file-reader] Processing files:", files.map(f => ({
-    filename: f.filename,
-    url: f.url,
-    mediaType: f.mediaType,
-    isTextReadable: isTextReadable(f.mediaType),
-  })));
-
   return Promise.all(
     files
-      .filter((f) => f.url && isTextReadable(f.mediaType))
+      .filter((f) => f.url && isIngestibleFile(f.mediaType, f.filename))
       .map(async (f) => {
         try {
-          console.log(`📥 [file-reader] Fetching: ${f.filename} from ${f.url}`);
           const content = await fetchTextContent(f.url!);
-          console.log(`✅ [file-reader] Read ${content.length} chars from ${f.filename}`);
           return `--- File: ${f.filename} ---\n${content}\n--- End of file ---`;
-        } catch (err) {
-          console.error(`❌ [file-reader] Failed to read ${f.filename}:`, err);
+        } catch {
           return `--- File: ${f.filename} ---\n[Failed to read file content]\n--- End of file ---`;
         }
       }),
