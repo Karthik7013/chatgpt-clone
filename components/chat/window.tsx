@@ -75,12 +75,18 @@ function ChatSession({
 
   const upload = useAttachmentUpload();
 
+  const transport = React.useMemo(
+    () =>
+      new DefaultChatTransport({
+        body: { model, webSearchEnabled },
+      }),
+    [model, webSearchEnabled],
+  );
+
   const { messages, sendMessage, regenerate, status, error, stop, clearError } = useChat({
     id: chatId,
     messages: initialMessages,
-    transport: new DefaultChatTransport({
-      body: { model, webSearchEnabled },
-    }),
+    transport,
   });
 
   const isBusy = status === "submitted" || status === "streaming";

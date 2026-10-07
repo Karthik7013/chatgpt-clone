@@ -29,11 +29,19 @@ export function ModelSelector({
   const [open, setOpen] = React.useState(false);
   const { providers, loading } = useProviders();
 
-  const allModels = providers.flatMap((p) =>
-    p.models.map((m) => ({ ...m, providerId: p.id, providerName: p.name }))
+  const allModels = React.useMemo(
+    () => providers.flatMap((p) => p.models.map((m) => ({ ...m, providerId: p.id, providerName: p.name }))),
+    [providers],
   );
 
-  const selected = allModels.find((m) => `${m.providerId}:${m.id}` === model) ?? allModels[0];
+  const selected = loading ? undefined : (allModels.find((m) => `${m.providerId}:${m.id}` === model) ?? undefined);
+
+  // Snap an unconfigured default (e.g. hardcoded kilo default with only
+  // OpenRouter key set) to the first available model once loaded.
+  React.useEffect(() => {
+    if (loading || selected || allModels.length === 0) return;
+    onModelChange(`${allModels[0].providerId}:${allModels[0].id}`);
+  }, [loading, selected, allModels, onModelChange]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

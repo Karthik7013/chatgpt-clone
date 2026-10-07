@@ -66,41 +66,12 @@ export const PROVIDERS: ProviderConfig[] = [
 export const DEFAULT_MODEL_ID = "kilo:kilo-auto/free";
 
 /**
- * Map of provider ID -> environment variable name for API key lookup.
- * Keeps envKey close to provider definitions for maintainability.
- */
-export const PROVIDER_ENV_KEYS: Record<string, string> = PROVIDERS.reduce(
-  (acc, provider) => {
-    acc[provider.id] = provider.envKey;
-    return acc;
-  },
-  {} as Record<string, string>,
-);
-
-/**
- * Get the environment variable NAME holding a provider's API key
- * (e.g. "OPENROUTER_API_KEY"). Resolve the value with `process.env[name]`;
- * see `isProviderConfigured` and `lib/providers/factory.ts`.
- */
-export function getProviderKey(providerId: string): string | undefined {
-  return PROVIDER_ENV_KEYS[providerId];
-}
-
-/**
  * Check whether a provider's API key is configured (non-empty).
  */
 export function isProviderConfigured(providerId: string): boolean {
-  const keyEnv = getProviderKey(providerId);
-  if (!keyEnv) return false;
-  const keyValue = process.env[keyEnv];
-  return !!keyValue && keyValue.trim().length > 0;
-}
-
-/**
- * Find a provider config by its ID.
- */
-export function getProvider(providerId: string): ProviderConfig | undefined {
-  return PROVIDERS.find((p) => p.id === providerId);
+  const provider = PROVIDERS.find((p) => p.id === providerId);
+  if (!provider) return false;
+  return !!process.env[provider.envKey]?.trim();
 }
 
 /**
@@ -108,4 +79,14 @@ export function getProvider(providerId: string): ProviderConfig | undefined {
  */
 export function getConfiguredProviders(): ProviderConfig[] {
   return PROVIDERS.filter((p) => isProviderConfigured(p.id));
+}
+
+/**
+ * First model of the first configured provider. Falls back to
+ * DEFAULT_MODEL_ID when nothing is configured (server will 400 clearly).
+ */
+export function getDefaultModelId(): string {
+  const first = getConfiguredProviders()[0];
+  if (!first || first.models.length === 0) return DEFAULT_MODEL_ID;
+  return `${first.id}:${first.models[0].id}`;
 }

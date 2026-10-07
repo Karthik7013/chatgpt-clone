@@ -7,7 +7,7 @@ import {
 } from "ai";
 
 import { createModel } from "@/lib/providers/factory";
-import { DEFAULT_MODEL_ID } from "@/lib/providers/provider-config";
+import { getDefaultModelId } from "@/lib/providers/provider-config";
 import { apiError } from "@/lib/api-response";
 import { streamErrorMessage } from "@/lib/errors";
 import { loadTools } from "@/lib/tools/tool-registry";
@@ -26,8 +26,7 @@ export async function POST(req: Request) {
   if ("response" in request) return request.response;
 
   const { messages, model, webSearchEnabled } = request.data;
-  const selectedModel = model ?? DEFAULT_MODEL_ID;
-  console.log("[api/chat] selectedModel:", selectedModel);
+  const selectedModel = model ?? getDefaultModelId();
 
   // A bad model id or missing API key is the client's fault, not ours.
   let result: ReturnType<typeof streamText>;

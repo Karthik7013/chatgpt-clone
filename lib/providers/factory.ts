@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
-import { PROVIDERS, getProviderKey, isProviderConfigured } from "./provider-config";
+import { PROVIDERS } from "./provider-config";
 
 export function parseModelIdentifier(id: string): { providerId: string; modelId: string } {
   const colonIndex = id.indexOf(":");
@@ -25,20 +25,18 @@ export function createModel(identifier: string): LanguageModel {
     throw new Error(`Unknown provider: "${providerId}" in "${identifier}"`);
   }
 
-  const envKey = getProviderKey(providerId) ?? provider.envKey;
-  const apiKey = process.env[envKey];
+  const apiKey = process.env[provider.envKey]?.trim();
   if (!apiKey) {
-    throw new Error(`API key not configured for ${provider.name}. Set ${provider.envKey} in .env.local`);
-  }
-
-  if (!isProviderConfigured(providerId)) {
     throw new Error(`API key not configured for ${provider.name}. Set ${provider.envKey} in .env.local`);
   }
 
   let actualModelId: string;
   if (modelId === "free" || modelId === "auto") {
     const freeModels = provider.models.filter((m) => m.id.endsWith(":free"));
-    actualModelId = freeModels[0]?.id || freeModels[0]?.name || modelId;
+    if (freeModels.length === 0) {
+      throw new Error(`No free models configured for provider "${providerId}"`);
+    }
+    actualModelId = freeModels[0].id;
   } else {
     actualModelId = modelId;
   }
