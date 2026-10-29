@@ -60,6 +60,7 @@ export function ChatApp({ initialChatId }: { initialChatId?: string } = {}) {
                   void deleteChatById(activeChatId);
                 }
               }}
+              onNewChat={() => void newChat()}
             />
 
             {storageError ? (

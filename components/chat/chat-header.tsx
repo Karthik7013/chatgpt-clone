@@ -1,14 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { MessageCirclePlus } from "lucide-react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { renameTitle } from "@/lib/chat-store";
 
@@ -21,10 +15,12 @@ export function ChatHeader({
   title,
   onRename,
   onDelete,
+  onNewChat,
 }: {
   title: string;
   onRename: (title: string) => void;
   onDelete: () => void;
+  onNewChat?: () => void;
 }) {
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [draft, setDraft] = React.useState(title);
@@ -63,25 +59,16 @@ export function ChatHeader({
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label="Chat options"
-                className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-              >
-                <MoreHorizontalIcon className="size-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={startRenaming}>
-                <PencilIcon className="size-3.5" /> Rename
-              </DropdownMenuItem>
-              <DropdownMenuItem destructive onSelect={onDelete}>
-                <Trash2Icon className="size-3.5" /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {onNewChat ? (
+          <button
+            type="button"
+            aria-label="New chat"
+            onClick={onNewChat}
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+          >
+            <MessageCirclePlus className="size-4" />
+          </button>
+        ) : null}
       </div>
     </header>
   );
