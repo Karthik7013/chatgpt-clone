@@ -1,15 +1,7 @@
-import type { FileUIPart, UIMessage } from "ai";
+import type { UIMessage } from "ai";
 
 import { fetchAllFileContents } from "@/lib/file-reader";
-
-/** Client adds `tmpUrl` to file parts; the AI SDK type does not declare it. */
-type PendingFilePart = FileUIPart & { tmpUrl?: string };
-
-function filePartsOf(message: UIMessage): PendingFilePart[] {
-  return message.parts.filter(
-    (part): part is PendingFilePart => part.type === "file",
-  );
-}
+import { filePartsOf, getFileUrl } from "@/lib/file-parts";
 
 /**
  * Inlines the text content of every attached file into the user message that
@@ -33,8 +25,7 @@ export async function attachFileContents(
       const contents = await fetchAllFileContents(
         files.map((file) => ({
           filename: file.filename,
-          // tmpUrl is the short-lived URL; url is the durable download link.
-          url: file.tmpUrl || file.url,
+          url: getFileUrl(file),
           mediaType: file.mediaType,
         })),
       );

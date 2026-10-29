@@ -8,20 +8,13 @@ import {
   ToolHeader,
   ToolInput,
   ToolOutput,
-  type ToolState,
 } from "@/components/ai-elements/tool";
-import { baseToolName, partToolName } from "@/lib/tool-names";
+import { baseToolName } from "@/lib/tool-names";
 import { toolCardFor } from "@/components/tool-cards/registry";
+import { getToolName, type ToolPartLike } from "@/lib/tool-parts";
+import type { ToolState } from "@/components/ai-elements/tool";
 
-/** A tool result, as it reaches the UI. `input`/`output` are tool-specific. */
-export type ToolPartLike = {
-  type: string;
-  toolName?: string;
-  state: ToolState;
-  input?: unknown;
-  output?: unknown;
-  errorText?: string;
-};
+export type { ToolPartLike } from "@/lib/tool-parts";
 
 export function ToolPart({
   part,
@@ -30,7 +23,7 @@ export function ToolPart({
   part: ToolPartLike;
   isStreamingTarget: boolean;
 }) {
-  const toolName = partToolName(part);
+  const toolName = getToolName(part);
   // The generic header labels the tool from this string, so it keeps the
   // `tool-` prefix that MCP names do not carry.
   const typeLabel =
@@ -44,24 +37,25 @@ export function ToolPart({
   // registry, so it is a fixed component and not one created per render.
   const Card = toolCardFor(baseToolName(toolName));
   if (Card) {
-    return createElement(Card, {
-      name: toolName,
-      state: part.state,
-      input: part.input,
-      output: part.output,
-      errorText: part.errorText,
-    });
+  return createElement(Card, {
+    name: toolName,
+    state: part.state as ToolState,
+    input: part.input,
+    output: part.output,
+    errorText: part.errorText,
+  });
   }
 
   // Force the generic card open while the tool runs so the Preparing/Running
   // state is visible, then hand control back to the user.
+  const toolState = part.state as ToolState;
   const isLive =
     isStreamingTarget &&
     (part.state === "input-streaming" || part.state === "input-available");
 
   return (
     <Tool defaultOpen={part.state === "output-error"} open={isLive ? true : undefined}>
-      <ToolHeader type={typeLabel} state={part.state} />
+      <ToolHeader type={typeLabel} state={toolState} />
       <ToolContent>
         <ToolInput input={part.input} />
         <ToolOutput output={part.output} errorText={part.errorText} />

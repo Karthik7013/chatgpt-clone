@@ -14,21 +14,14 @@ import { renameTitle } from "@/lib/chat-store";
 export function ChatHeader({
   title,
   onRename,
-  onDelete,
   onNewChat,
 }: {
   title: string;
   onRename: (title: string) => void;
-  onDelete: () => void;
   onNewChat?: () => void;
 }) {
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [draft, setDraft] = React.useState(title);
-
-  function startRenaming() {
-    setDraft(title);
-    setIsRenaming(true);
-  }
 
   function commitRename() {
     setIsRenaming(false);

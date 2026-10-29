@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import type { FileUIPart } from "ai";
 
 import { uploadFileToWorker } from "@/lib/file-upload";
+import { type ClientFileUIPart } from "@/lib/file-parts";
 
 /** An uploaded file, ready to be sent as a message attachment. */
-export type PendingFile = FileUIPart & { id: string; tmpUrl: string };
+export type PendingFile = ClientFileUIPart & { id: string };
 
 const UPLOAD_ERROR_TIMEOUT_MS = 5000;
 
@@ -32,7 +32,7 @@ export function useAttachmentUpload() {
       const uploaded = await Promise.all(
         Array.from(selected).map(async (file): Promise<PendingFile> => {
           const result = await uploadFileToWorker(file);
-          return {
+          const part: PendingFile = {
             type: "file" as const,
             id: result.itemId,
             filename: result.fileName,
@@ -40,6 +40,7 @@ export function useAttachmentUpload() {
             url: result.publicUrl || "",
             tmpUrl: result.publicUrl || "",
           };
+          return part;
         }),
       );
       setFiles((prev) => [...prev, ...uploaded]);

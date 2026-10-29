@@ -1,3 +1,5 @@
+import { getErrorMessage } from "@/lib/error-utils";
+
 /**
  * Turns a raw error into something worth showing a user. Providers report
  * failures as free-form strings, so we match on substrings rather than
@@ -11,30 +13,31 @@
  * uses `streamErrorMessage` below instead.
  */
 export function friendlyError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  const msg = getErrorMessage(error);
+  const message = msg.toLowerCase();
 
-  if (message.includes("429") || message.includes("rate_limit") || message.includes("quota")) {
+  if (msg.includes("429") || message.includes("rate_limit") || message.includes("quota")) {
     return "Rate limit exceeded. Try a different model or wait a moment.";
   }
   if (
-    message.includes("API key not configured") ||
-    message.includes("PERMISSION_DENIED") ||
-    message.includes("403")
+    msg.includes("API key not configured") ||
+    message.includes("permission_denied") ||
+    msg.includes("403")
   ) {
     return "API key error. Check your provider API key in .env.local.";
   }
   if (
-    message.includes("Unknown provider") ||
-    message.includes("Unknown model") ||
-    message.includes("INVALID_ARGUMENT") ||
-    message.includes("400")
+    msg.includes("Unknown provider") ||
+    msg.includes("Unknown model") ||
+    message.includes("invalid_argument") ||
+    msg.includes("400")
   ) {
     return "Invalid request. Try another model, or a shorter prompt or smaller file.";
   }
-  if (message.includes("UNAVAILABLE") || message.includes("503")) {
+  if (message.includes("unavailable") || msg.includes("503")) {
     return "Service temporarily unavailable. Try again later.";
   }
-  if (message.includes("deadline_exceeded") || message.includes("504")) {
+  if (message.includes("deadline_exceeded") || msg.includes("504")) {
     return "Request timed out. Try a shorter prompt or smaller file.";
   }
   return "Something went wrong. Try again.";

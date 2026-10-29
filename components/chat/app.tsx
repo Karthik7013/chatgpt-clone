@@ -55,11 +55,6 @@ export function ChatApp({ initialChatId }: { initialChatId?: string } = {}) {
             <ChatHeader
               title={activeTitle}
               onRename={(title) => void renameChatById(activeChatId, title)}
-              onDelete={() => {
-                if (window.confirm(`Delete "${activeTitle}"?`)) {
-                  void deleteChatById(activeChatId);
-                }
-              }}
               onNewChat={() => void newChat()}
             />
 

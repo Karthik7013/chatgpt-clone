@@ -1,26 +1,34 @@
 "use client";
 
 import * as React from "react";
+import { usePathname, useRouter } from "next/navigation";
+import type { UIMessage } from "ai";
 
 import {
   createChat,
+  deleteChat,
   listChats,
+  loadMessages,
+  renameChat,
+  titleFromMessage,
   type ChatSummary,
 } from "@/lib/chat-store";
 import { dedupeById } from "@/lib/chat-list";
-import { chatIdFromPath, writeChatUrl } from "@/lib/chat-url";
+import { chatIdFromPath } from "@/lib/chat-url";
 import { CHAT_ERROR } from "@/components/chat/chat-errors";
-import { useChatActions } from "@/components/chat/use-chat-actions";
 
 /**
  * Owns the chat list and every operation on it: which chat is open, creating,
  * renaming, deleting, and naming a chat after its first message.
  *
- * State and lifecycle (one-time bootstrap, Back/Forward navigation) live
- * here; row operations live in `useChatActions`. The return shape is the
- * component-facing API — `app.tsx` destructures it, so keep it stable.
+ * State and lifecycle (one-time bootstrap, route changes) live here. The return
+ * shape is the component-facing API — `app.tsx` destructures it, so keep it
+ * stable.
  */
 export function useChats(initialChatId?: string) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [chats, setChats] = React.useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = React.useState<string | null>(null);
   const [ready, setReady] = React.useState(false);
@@ -42,14 +50,18 @@ export function useChats(initialChatId?: string) {
         const existing = await listChats();
         if (cancelled) return;
 
-        const requested = initialChatIdRef.current
-          ? existing.find((chat) => chat.id === initialChatIdRef.current)
+        const routeId = chatIdFromPath(pathname);
+        const requestedId = routeId ?? initialChatIdRef.current;
+        const requested = requestedId
+          ? existing.find((chat) => chat.id === requestedId)
           : undefined;
 
         if (requested) {
           setChats(existing);
           setActiveChatId(requested.id);
-          // The deep link already matches; nothing to correct.
+          if (routeId !== requested.id) {
+            router.replace(`/c/${encodeURIComponent(requested.id)}`);
+          }
           return;
         }
 
@@ -59,7 +71,7 @@ export function useChats(initialChatId?: string) {
           // Reached via `/` or an unknown id, so point the URL at the chat we
           // actually opened. Replacing rather than pushing keeps a dead id out
           // of the history.
-          writeChatUrl(existing[0].id, "replace");
+          router.replace(`/c/${encodeURIComponent(existing[0].id)}`);
           return;
         }
 
@@ -67,7 +79,7 @@ export function useChats(initialChatId?: string) {
         if (cancelled) return;
         setChats([chat]);
         setActiveChatId(chat.id);
-        writeChatUrl(chat.id, "replace");
+        router.replace(`/c/${encodeURIComponent(chat.id)}`);
       } catch (err) {
         console.error("Failed to bootstrap chats:", err);
         if (cancelled) return;
@@ -81,69 +93,143 @@ export function useChats(initialChatId?: string) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Back and Forward move between chats. The browser has already written the
-  // URL by the time `popstate` fires, so this only has to open that chat —
-  // writing history again here would trap the user.
+  // Sync when route changes (back/forward/navigation)
   React.useEffect(() => {
     if (!ready) return;
+    const routeId = chatIdFromPath(pathname);
+    if (!routeId) return;
+    if (routeId === activeChatId) return;
+
+    const known = chats.some((chat) => chat.id === routeId);
+    if (known) {
+      queueMicrotask(() => setActiveChatId(routeId));
+      return;
+    }
+
     let cancelled = false;
-
-    async function onPopState() {
-      const id = chatIdFromPath(window.location.pathname);
-      // Not a chat URL: the user left the app, which Next.js owns.
-      if (!id || id === activeChatId) return;
-
-      const known = chats.some((chat) => chat.id === id);
-      if (known) {
-        setActiveChatId(id);
-        return;
-      }
-
-      // A chat that was deleted, or one this tab has not seen yet. Reload the
-      // list before giving up on it, then fall back to the newest chat and
-      // replace the now-unreachable entry.
+    void (async () => {
       try {
         const existing = dedupeById(await listChats());
         if (cancelled) return;
 
-        const requested = existing.find((chat) => chat.id === id);
+        const requested = existing.find((chat) => chat.id === routeId);
         if (requested) {
-          setChats(existing);
-          setActiveChatId(requested.id);
+          queueMicrotask(() => {
+            setChats(existing);
+            setActiveChatId(requested.id);
+          });
           return;
         }
 
         if (existing.length === 0) return;
-        setChats(existing);
-        setActiveChatId(existing[0].id);
-        writeChatUrl(existing[0].id, "replace");
+        queueMicrotask(() => {
+          setChats(existing);
+          setActiveChatId(existing[0].id);
+        });
+        router.replace(`/c/${encodeURIComponent(existing[0].id)}`);
       } catch (err) {
-        console.error("Failed to open chat from history:", err);
+        console.error("Failed to open chat from route:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, ready, chats, activeChatId, router]);
+
+  /** Opens a chat and records it in history so Back returns to the previous one. */
+  function selectChat(id: string) {
+    // Re-selecting the open chat must not stack up history entries.
+    if (id === activeChatId) return;
+    setActiveChatId(id);
+    router.push(`/c/${encodeURIComponent(id)}`);
+  }
+
+  async function newChat() {
+    // Already sitting on an empty chat: stay put rather than stacking up
+    // empty chats the user cannot tell apart. Staying put also means leaving
+    // the URL alone.
+    if (activeChatId) {
+      try {
+        const messages = await loadMessages(activeChatId);
+        if (messages.length === 0) return;
+      } catch {
+        // If we cannot tell whether it is empty, go ahead and create one.
       }
     }
 
-    window.addEventListener("popstate", onPopState);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("popstate", onPopState);
-    };
-  }, [chats, activeChatId, ready]);
+    try {
+      const chat = await createChat();
+      setChats((prev) => dedupeById([chat, ...prev]));
+      setActiveChatId(chat.id);
+      router.push(`/c/${encodeURIComponent(chat.id)}`);
+    } catch (err) {
+      console.error("Failed to create chat:", err);
+      setStorageError(CHAT_ERROR.create);
+    }
+  }
 
-  const {
-    newChat,
-    selectChat,
-    renameChatById,
-    deleteChatById,
-    nameFromFirstMessage,
-  } = useChatActions({
-    chats,
-    activeChatId,
-    setChats,
-    setActiveChatId,
-    setStorageError,
-  });
+  async function renameChatById(id: string, title: string) {
+    try {
+      await renameChat(id, title);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === id ? { ...chat, title, updatedAt: Date.now() } : chat,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to rename chat:", err);
+      setStorageError(CHAT_ERROR.rename);
+    }
+  }
+
+  async function deleteChatById(id: string) {
+    try {
+      await deleteChat(id);
+
+      if (id !== activeChatId) {
+        setChats((prev) => prev.filter((chat) => chat.id !== id));
+        return;
+      }
+
+      // The open chat was deleted, so move to another one, creating a fresh
+      // chat if that was the last one. Replacing the URL keeps the deleted
+      // chat's id out of the history, where it could only 404.
+      const remaining = chats.filter((chat) => chat.id !== id);
+      if (remaining.length > 0) {
+        setChats(remaining);
+        setActiveChatId(remaining[0].id);
+        router.replace(`/c/${encodeURIComponent(remaining[0].id)}`);
+      } else {
+        const chat = await createChat();
+        setChats([chat]);
+        setActiveChatId(chat.id);
+        router.replace(`/c/${encodeURIComponent(chat.id)}`);
+      }
+    } catch (err) {
+      console.error("Failed to delete chat:", err);
+      setStorageError(CHAT_ERROR.remove);
+    }
+  }
+
+  /** Names the chat after its first user message, so the sidebar is readable. */
+  async function nameFromFirstMessage(id: string, message: UIMessage) {
+    try {
+      const title = titleFromMessage(message);
+      await renameChat(id, title);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === id ? { ...chat, title, updatedAt: Date.now() } : chat,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to update chat:", err);
+      setStorageError(CHAT_ERROR.renameFromMessage);
+    }
+  }
 
   return {
     chats,

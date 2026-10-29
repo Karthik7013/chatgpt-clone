@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
 
-import { baseToolName, partToolName } from "@/lib/tool-names";
+import { hasToolOutput, isToolPart, isWebSearchTool } from "@/lib/tool-parts";
 
 /**
  * Everything the message renderer needs to know about a message, derived once
@@ -57,17 +57,17 @@ export function extractSourceDocuments(parts: Part[]): SourceFile[] {
  * neither, which is why this must go through the name helpers.
  */
 export function extractSearchCitations(parts: Part[]): SearchCitation[] {
-  return parts
-    .filter((p) => p.type.startsWith("tool-") || p.type === "dynamic-tool")
-    .filter((p) => {
-      const part = p as { state?: string };
-      return part.state === "output-available";
-    })
-    .filter((p) => baseToolName(partToolName(p)) === "web-search")
-    .flatMap((p) => {
-      const output = (p as { output?: { results?: SearchCitation[] } }).output;
-      return output?.results ?? [];
-    });
+  const result: SearchCitation[] = [];
+  for (const p of parts) {
+    if (!isToolPart(p)) continue;
+    if (!hasToolOutput(p)) continue;
+    if (!isWebSearchTool(p)) continue;
+    const output = (p as { output?: unknown }).output as { results?: SearchCitation[] } | undefined;
+    if (Array.isArray(output?.results)) {
+      result.push(...output.results);
+    }
+  }
+  return result;
 }
 
 /** All text in a message, which is what the copy button puts on the clipboard. */

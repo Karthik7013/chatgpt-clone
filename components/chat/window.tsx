@@ -18,10 +18,7 @@ import { MessageBubble } from "@/components/chat/message-bubble";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ErrorBanner } from "@/components/chat/error-banner";
 import { useAttachmentUpload } from "@/components/chat/use-attachment-upload";
-import {
-  useAutosaveMessages,
-  usePersistedMessages,
-} from "@/components/chat/use-persisted-messages";
+import { useChatMessagesPersistence } from "@/components/chat/use-persisted-messages";
 
 /**
  * Chat window for one conversation: loads the stored messages, then hands off
@@ -34,7 +31,7 @@ export function ChatWindow({
   chatId: string;
   onFirstMessage: (message: UIMessage) => void;
 }) {
-  const { messages, loadFailed } = usePersistedMessages(chatId);
+  const { messages, loadFailed } = useChatMessagesPersistence(chatId);
 
   if (messages === null) {
     return (
@@ -101,11 +98,8 @@ function ChatSession({
     onFirstMessage(firstUser);
   }, [messages, onFirstMessage]);
 
-  const { saveError, dismissSaveError } = useAutosaveMessages({
-    chatId,
-    messages,
-    enabled: !loadFailed,
-  });
+  const persistence = useChatMessagesPersistence(chatId);
+  const { saveError, dismissSaveError } = persistence;
 
   function handleRetry() {
     if (isBusy) return;
